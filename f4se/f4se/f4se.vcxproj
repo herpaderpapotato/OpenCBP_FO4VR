@@ -11,6 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\common\common_vc14.vcxproj">
+      <Project>{472e19ab-def0-42df-819b-18722e8dc822}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\f4se_common\f4se_common.vcxproj">
       <Project>{f1447a44-f26a-4680-8e20-2d9186766e51}</Project>
     </ProjectReference>

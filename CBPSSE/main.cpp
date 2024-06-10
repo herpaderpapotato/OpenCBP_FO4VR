@@ -118,7 +118,7 @@ extern "C"
             logger.Error("loaded in editor, marking as incompatible\n");
             return false;
         }
-        else if (f4se->runtimeVersion != RUNTIME_VERSION)
+        else if (f4se->runtimeVersion != RUNTIME_VERSION_1_10_984)
         {
             logger.Error("unsupported runtime version %08X", f4se->runtimeVersion);
             return false;

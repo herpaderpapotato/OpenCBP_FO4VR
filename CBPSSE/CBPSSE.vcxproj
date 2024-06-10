@@ -78,7 +78,7 @@
     <TargetExt>.dll</TargetExt>
     <TargetName>cbp</TargetName>
     <LinkIncremental>false</LinkIncremental>
-    <LibraryPath>$(OutDir);$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(ProjectDir)x64_v142\Release\;$(OutDir);$(LibraryPath)</LibraryPath>
     <IncludePath>$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -132,7 +132,7 @@
       <SDLCheck>
       </SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)f4se;$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_USRDLL;PLUGIN_EXAMPLE_EXPORTS;RUNTIME;RUNTIME_VERSION=0x010A0A30;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_USRDLL;PLUGIN_EXAMPLE_EXPORTS;RUNTIME;RUNTIME_VERSION=0x010A3D80;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ForcedIncludeFiles>common/IPrefix.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -144,7 +144,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(OutDir)f4se_1_10_163.lib;$(OutDir)f4se_common.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(OutDir)f4se_1_10_163.lib;$(OutDir)f4se_common.lib;$(SolutionDir)x64_v142\Release\common_vc14.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetPath)" "$(Fallout4Path)\$(TargetFileName)"</Command>
