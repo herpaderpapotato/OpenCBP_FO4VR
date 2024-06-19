@@ -5,6 +5,7 @@
 
 #include "log.h"
 #include "../detourxs-master/detourxs.h"
+#include "f4se_common/f4se_version.h"
 #include "f4se_common/Utilities.h"
 
 //#define SAFE_RELEASE(x) if((x)) {x->Release(); x = nullptr;}
@@ -192,7 +193,9 @@ void hk_ProcessEventQueue_Internal(void *thisPtr)
 	UpdateActors();
 }
 
-RelocPtr <void*> ProcessEventQueue_Internal(0x0211CF80);
+// See f4se/Hooks_Threads.cpp
+// TODO someday address library.  someday.
+RelocPtr <void*> ProcessEventQueue_Internal(0x01A09CB0);
 
 DetourXS renderDetour;
 
