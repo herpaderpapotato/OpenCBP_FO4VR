@@ -98,17 +98,28 @@ void MessageHandler(F4SEMessagingInterface::Message* msg)
 
 extern "C"
 {
+    __declspec(dllexport) F4SEPluginVersionData F4SEPlugin_Version =
+    {
+        F4SEPluginVersionData::kVersion,
 
-    bool F4SEPlugin_Query(const F4SEInterface* f4se, PluginInfo* info)
+        25,
+        "OCBP plugin",
+        "takosako",
+
+        0,	// not version independent
+        0,	// not version independent (extended field)
+        { RUNTIME_VERSION_1_10_984, 0 },	// compatible with 1.10.984
+
+        0,	// works with any version of the script extender. you probably do not need to put anything here
+    };
+};
+
+extern "C"
+{
+    bool F4SEPlugin_Load(const F4SEInterface* f4se)
     {
         logger.Info("OCBP Physics F4SE Plugin\n");
-        logger.Error("Query called\n");
-
-
-        // populate info structure
-        info->infoVersion = PluginInfo::kInfoVersion;
-        info->name = "OCBP plugin";
-        info->version = 24;
+        logger.Error("CBP Loading\n");
 
         // store plugin handle so we can identify ourselves later
         g_pluginHandle = f4se->GetPluginHandle();
@@ -131,14 +142,6 @@ extern "C"
             _WARNING("couldn't get papyrus interface");
         }
 
-        logger.Error("Query complete\n");
-        return true;
-    }
-
-    bool F4SEPlugin_Load(const F4SEInterface* f4se)
-    {
-        logger.Error("CBP Loading\n");
-
         g_task = (F4SETaskInterface*)f4se->QueryInterface(kInterface_Task);
         if (!g_task)
         {
@@ -158,6 +161,7 @@ extern "C"
 
         g_messagingInterface->RegisterListener(g_pluginHandle, "F4SE", MessageHandler);
 
+        logger.Error("CBP Load complete\n");
         return true;
     }
 };

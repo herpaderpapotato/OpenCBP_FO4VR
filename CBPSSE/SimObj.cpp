@@ -132,6 +132,8 @@ void SimObj::Update(Actor* actor)
 
     for (auto& t : things)
     {
+        //concurrency::parallel_for_each(things.begin(), things.end(), [&](auto& thing)
+        //    {
         // Might be a better way to do this
         auto actorBoneMapIter = boneIgnores.find(actor->formID);
         if (actorBoneMapIter != boneIgnores.end())
@@ -151,6 +153,7 @@ void SimObj::Update(Actor* actor)
         {
             t.second.UpdateThing(actor);
         }
+        //});
     }
 }
 

@@ -337,7 +337,6 @@ config_t actorUtils::BuildConfigForActor(Actor* actor, UInt64 hashKey)
                 }
             }
 
-            //auto armorFormID = orData.armors.begin();
             // whitelist filter
             if (orData.isFilterInverted)
             {

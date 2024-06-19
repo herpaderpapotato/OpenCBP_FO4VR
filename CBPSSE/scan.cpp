@@ -175,6 +175,7 @@ void UpdateActors()
     else
     {
         // Attempt to get cell's objects
+        // TODO check concurrency
         for (UInt32 i = 0; i < cell->objectList.count; i++)
         {
             auto ref = cell->objectList[i];
@@ -258,40 +259,41 @@ void UpdateActors()
         }
     }
 
-    for (auto& a : actorEntries)
-    {
-        auto actorsIterator = actors.find(a.id);
-        if (actorsIterator == actors.end())
+    concurrency::parallel_for_each(actorEntries.begin(), actorEntries.end(), [&](const auto& a)
         {
-            //logger.error("Sim Object not found in tracked actors\n");
+    auto actorsIterator = actors.find(a.id);
+    if (actorsIterator == actors.end())
+    {
+        //logger.error("Sim Object not found in tracked actors\n");
+    }
+    else
+    {
+        auto& simObj = actorsIterator->second;
+
+        SimObj::Gender gender = IsActorMale(a.actor) ? SimObj::Gender::Male : SimObj::Gender::Female;
+
+        if (simObj.IsBound())
+        {
+            // If gender and/or race have changed due to game state changes,
+            // reset simObj data to clear out outdated bone data.
+            if (gender != simObj.GetGender() ||
+                GetActorRaceEID(a.actor) != simObj.GetRaceEID())
+            {
+                logger.Info("UpdateActors: Reset sim object\n");
+                simObj.Reset();
+            }
         }
         else
         {
-            auto& simObj = actorsIterator->second;
+            auto key = BuildActorKey(a.actor);
+            auto& composedConfig = BuildConfigForActor(a.actor, key);
 
-            SimObj::Gender gender = IsActorMale(a.actor) ? SimObj::Gender::Male : SimObj::Gender::Female;
-
-            // Check if gender and/or race have changed
-            if (simObj.IsBound())
-            {
-                if (gender != simObj.GetGender() ||
-                    GetActorRaceEID(a.actor) != simObj.GetRaceEID())
-                {
-                    logger.Info("UpdateActors: Reset sim object\n");
-                    simObj.Reset();
-                }
-            }
-            else
-            {
-                auto key = BuildActorKey(a.actor);
-                auto& composedConfig = BuildConfigForActor(a.actor, key);
-
-                //logger.Error("UpdateActors: Setting key for actor %x...\n", a.id);
-                simObj.SetActorKey(key);
-                simObj.Bind(a.actor, boneNames, composedConfig);
-            }
+            //logger.Error("UpdateActors: Setting key for actor %x...\n", a.id);
+            simObj.SetActorKey(key);
+            simObj.Bind(a.actor, boneNames, composedConfig);
         }
     }
+        });
 
     concurrency::parallel_for_each(actorEntries.begin(), actorEntries.end(), [&](const auto& a)
         {

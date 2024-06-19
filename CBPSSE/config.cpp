@@ -533,7 +533,7 @@ bool LoadConfig()
     bonesSet = std::set<std::string>(boneNames.begin(), boneNames.end());
     boneNames.assign(bonesSet.begin(), bonesSet.end());
 
-    // "Delete" bones specified in [Attach] but not [Attach.A] from the latter for compatibility with presets that remove breast bone jiggle when chest armor equipped
+    // "Delete" bones specified in [Attach] but not [Attach.A] from the latter for compatibility with presets
     if (detectArmorCompat)
     {
         for (auto & boneName : boneNames)
