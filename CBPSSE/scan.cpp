@@ -371,8 +371,8 @@ NiPoint3 playerPos = (*g_player)->unkF0->rootNode->m_worldTransform.pos;
         }
     }
 
-    //for (auto& a : actorEntries)
-    concurrency::parallel_for_each(actorEntries.begin(), actorEntries.end(), [&](const auto& a)
+    for (auto& a : actorEntries)
+    //concurrency::parallel_for_each(actorEntries.begin(), actorEntries.end(), [&](const auto& a)
     {
         auto actorsIterator = actors.find(a.id);
         if (actorsIterator == actors.end())
@@ -406,7 +406,7 @@ NiPoint3 playerPos = (*g_player)->unkF0->rootNode->m_worldTransform.pos;
                 simObj.Bind(a.actor, boneNames, composedConfig);
             }
         }
-    });
+    };//);
 
     concurrency::parallel_for_each(actorEntries.begin(), actorEntries.end(), [&](const auto& a)
         {
