@@ -1,5 +1,5 @@
-# OpenCBP_FO4VR
-OpenCBP Physics for Fallout4VR 
+# OpenCBPC_FO4VR
+OpenCBPC Physics for Fallout4VR 
 Visual Studio 2022 and later.
 
 This repo is just copy+pasted stuff from:
@@ -39,6 +39,6 @@ This version with f4sevr_1_2_72.dll and f4sevr_loader.exe version 0.0.6.21 loads
 plugin C:\Program Files (x86)\Steam\steamapps\common\Fallout 4 VR\Data\F4SE\Plugins\\cbp.dll (00000001 OCBP plugin 00000018) loaded correctly
 ```
 
-Physics and math calculations are unchanged from https://github.com/ericncream/OpenCBP_FO4/tree/0de97c419c3ecfc94ade0d466d5f84f65275a3c6 which is the June 19 2024 commit. Tested in game with and without FRIK.
+Physics and math calculations are unchanged from ocbpc commit. Tested in game with and without FRIK.
 
 If there's any issues, good luck ;). I just compiled it, I don't know how it works.
