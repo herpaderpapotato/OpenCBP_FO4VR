@@ -7,9 +7,9 @@ name: MSBuild_C
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master-OpenCBPC_FOVR" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "master-OpenCBPC_FOVR" ]
 
 env:
   # Path to the solution file relative to the root of the project.
