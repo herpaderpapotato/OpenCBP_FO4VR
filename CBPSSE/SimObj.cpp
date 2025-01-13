@@ -66,7 +66,8 @@ bool SimObj::AddBonesToThings(Actor* actor, std::vector<std::string>& boneNames)
 
 bool SimObj::Bind(Actor* actor, std::vector<std::string>& boneNames, config_t& config)
 {
-    if (!actor)
+    //if (!actor)
+    if (!actorUtils::IsActorValid(actor))
     {
         return false;
     }
@@ -76,6 +77,7 @@ bool SimObj::Bind(Actor* actor, std::vector<std::string>& boneNames, config_t& c
         bound = true;
 
         things.clear();
+        actorColliders.clear();
 
         if (actorUtils::IsActorMale(actor))
         {
@@ -88,7 +90,14 @@ bool SimObj::Bind(Actor* actor, std::vector<std::string>& boneNames, config_t& c
 
         raceEid = actorUtils::GetActorRaceEID(actor);
 
-        AddBonesToThings(actor, boneNames);
+        //AddBonesToThings(actor, boneNames);
+        auto success = AddBonesToThings(actor, boneNames);
+        if (!success)
+        {
+            return false;
+        }
+
+        GroundCollisionEnabled = CreateActorColliders(actor, actorColliders);
         UpdateConfigs(config);
         return  true;
     }
@@ -184,6 +193,86 @@ void SimObj::Update(Actor* actor)
         //});
     }
 }
+
+void SimObj::Update(Actor* actor, bool collisionsEnabled)
+{
+    bool stopPhysics = false;
+
+    if (!bound ||
+        IsActorInPowerArmor(actor) ||
+        NULL == GetBaseSkeleton(actor))
+    {
+        return;
+    }
+    
+    if (!actorUtils::IsActorValid(actor))
+    {
+        //LOG_ERROR("%s: Invalid actor. %s\n", __func__);
+        return;
+    }
+
+    for (auto& t : things)
+    {
+        //concurrency::parallel_for_each(things.begin(), things.end(), [&](auto& thing)
+        //    {
+        // Might be a better way to do this
+        //logger.Error("------------------------------------\n");
+		//logger.Error("%s: Updating Thing %s for actor %08x\n", __func__, t.first.c_str(), actor->formID);
+        //logger.Error("------------------------------------\n");
+        auto actorBoneMapIter = boneIgnores.find(actor->formID);
+        //logger.Error("------------------------------------\n");
+
+        if (actorBoneMapIter != boneIgnores.end())
+        {
+			//logger.Error("------------------------------------\n");
+			//logger.Error("%s: actorBoneMapIter found\n", __func__);
+            //logger.Error("------------------------------------\n");
+            auto & actorBoneMap = actorBoneMapIter->second;
+            //logger.Error("------------------------------------\n");
+			//logger.Error("%s: actorBoneMap found\n", __func__);
+            //logger.Error("------------------------------------\n");
+            auto boneDisabledIter = actorBoneMap.find(t.first);
+            //logger.Error("------------------------------------\n");
+			//logger.Error("%s: boneDisabledIter found\n", __func__);
+            //logger.Error("------------------------------------\n");
+            if (boneDisabledIter != actorBoneMap.end())
+            {
+                //logger.Error("------------------------------------\n");
+				//logger.Error("%s: Bone %s is disabled for actor %08x\n", __func__, t.first.c_str(), actor->formID);
+                //logger.Error("------------------------------------\n");
+                if (true == boneDisabledIter->second)
+                {
+                    continue;
+                }
+            }
+        }
+
+        //logger.Error("------------------------------------\n");
+		//logger.Error("Checking if second is enabled\n");
+        //logger.Error("------------------------------------\n");
+        if (t.second.isEnabled)
+        {
+            t.second.ActorCollisionsEnabled = collisionsEnabled;
+            t.second.groundPos = this->groundPos;
+			//logger.Error("------------------------------------\n");
+			//logger.Error("Second is enabled, updating thing\n");
+
+            //logger.Error("------------------------------------\n");
+            t.second.UpdateThing(actor);
+            if (t.second.VirtualCollisionEnabled)
+            {
+                std::string boneName = std::string(t.second.boneName.c_str());
+                NodeCollisionSync[boneName] = t.second.collisionSync;
+            }
+            //logger.Error("------------------------------------\n");
+			//logger.Error("%s: Updated Thing %s for actor %08x\n", __func__, t.first.c_str(), actor->formID);
+
+            //logger.Error("------------------------------------\n");
+        }
+        //});
+    }
+}
+
 
 bool SimObj::UpdateConfigs(config_t& config)
 {

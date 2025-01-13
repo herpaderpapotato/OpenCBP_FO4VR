@@ -35,6 +35,7 @@
 #include "config.h"
 #include "PapyrusOCBP.h"
 #include "SimObj.h"
+#include "Utility.hpp"
 #include "f4se/GameRTTI.h"
 #include "f4se/GameForms.h"
 #include "f4se/GameReferences.h"
@@ -58,6 +59,8 @@ using actorUtils::GetActorRaceEID;
 std::atomic<TESObjectCELL*> currCell = nullptr;
 
 extern F4SETaskInterface* g_task;
+
+concurrency::concurrent_unordered_map<UInt32, SimObj> actors;  // Map of Actor (stored as form ID) to its Simulation Object
 
 #ifdef SIMPLE_BENCHMARK
 bool firsttimeloginit = true;
@@ -133,9 +136,11 @@ inline void safe_delete(T*& in)
     }
 }
 
+bool compareActorEntries(const ActorEntry& entry1, const ActorEntry& entry2)
+{
+    return entry1.actorDistSqr < entry2.actorDistSqr;
+}
 
-
-concurrency::concurrent_unordered_map<UInt32, SimObj> actors;  // Map of Actor (stored as form ID) to its Simulation Object
 TESObjectCELL* curCell = nullptr;
 
 
@@ -155,13 +160,33 @@ void UpdateActors()
 
     // We scan the cell and build the list every time - only look up things by ID once
     // we retain all state by actor ID, in a map - it's cleared on cell change
-    concurrency::concurrent_vector<ActorEntry> actorEntries;
+    //concurrency::concurrent_vector<ActorEntry> actorEntries;
+
+    actorEntries.clear();
 
     //logger.error("scan Cell\n");
-    auto player = DYNAMIC_CAST(LookupFormByID(0x14), TESForm, Actor);
-    if (!player || !player->unkF0) goto FAILED;
+     if (!(*g_player) || !(*g_player)->unkF0)
+    {
+        return;
+    }
 
-    auto cell = player->parentCell;
+    TESObjectCELL* cell = (*g_player)->parentCell;
+    if (!cell)
+        return;
+
+
+    auto player = DYNAMIC_CAST(LookupFormByID(0x14), TESForm, Actor);
+    // if (!player || !player->unkF0) goto FAILED;
+    if (!player || !player->unkF0) return;
+
+    float xLow = 9999999.0;
+    float xHigh = -9999999.0;
+    float yLow = 9999999.0;
+    float yHigh = -9999999.0;
+    float zLow = 9999999.0;
+    float zHigh = -9999999.0;
+
+    //auto cell = player->parentCell;
     if (!cell) goto FAILED;
 
     if (cell != curCell)
@@ -182,6 +207,38 @@ void UpdateActors()
             {
                 // Attempt to get actors
                 auto actor = DYNAMIC_CAST(ref, TESObjectREFR, Actor);
+
+                bool isValid = true;
+                auto actorDistance = 1024.0f; // TODO, 32 squared
+                auto actorBounceDistance = 4096.0f; // TODO, 64 squared
+                float actorDistSqr = 0.0;
+
+
+                if (!IsActorValid(actor))
+                {
+                    //LOG_VERBOSE("%s: Actor in cell invalid for physics, ignoring. \n", __func__);
+                    continue;
+                }
+
+                if (actor->unkF0->rootNode)
+                {
+                    //Getting border values;
+                    NiPoint3 relativeActorPos = actor->unkF0->rootNode->m_worldTransform.pos - (*g_player)->unkF0->rootNode->m_worldTransform.pos;
+
+                    actorDistSqr = magnitudePwr2(relativeActorPos);
+
+                    if (actorDistSqr > actorBounceDistance)
+                    {
+                        //LOG_VERBOSE("Actor with form ID %08x too far away\n", actor->formID);
+                        isValid = false;
+                    }
+                }
+
+                if (!isValid)
+                {
+                    continue;
+                }
+
                 if (actor && actor->unkF0)
                 {
                     // If actor is not being tracked yet
@@ -195,9 +252,11 @@ void UpdateActors()
                             //    actor->race->editorId.c_str(),
                             //    IsActorMale(actor));
                             // Make SimObj and place new element in Things
-                            auto obj = SimObj(actor);
-                            actors.insert(std::make_pair(actor->formID, obj));
-                            actorEntries.push_back(ActorEntry{ actor->formID, actor });
+                            auto simObj = SimObj(actor);
+                            //simObj.actorDistSqr = actorDistSqr;
+                            actors.insert(std::make_pair(actor->formID, simObj));
+                            //actorEntries.push_back(ActorEntry{ actor->formID, actor });
+                            actorEntries.push_back(ActorEntry{ actor->formID, actor, actorDistSqr, actorDistSqr <= actorDistance });
                         }
                     }
                     else if (IsActorValid(actor))
@@ -210,6 +269,60 @@ void UpdateActors()
         }
     }
 
+    partitions.clear();
+
+NiPoint3 playerPos = (*g_player)->unkF0->rootNode->m_worldTransform.pos;
+    long colliderSphereCount = 0;
+    long colliderCapsuleCount = 0;
+
+    for (auto& a : actorEntries)
+    {
+        if (a.collisionsEnabled == true)
+        {
+            auto simObjIter = actors.find(a.id);
+            if (simObjIter != actors.end())
+            {
+                UpdateColliderPositions(simObjIter->second.actorColliders, simObjIter->second.NodeCollisionSync);
+
+                for (auto& collider : simObjIter->second.actorColliders)
+                {
+                    std::vector<int> ids;
+                    std::vector<int> hashIdList;
+                    for (int j = 0; j < collider.second.collisionSpheres.size(); j++)
+                    {
+                        hashIdList = GetHashIdsFromPos(collider.second.collisionSpheres[j].worldPos, collider.second.collisionSpheres[j].radius);
+
+                        for (int m = 0; m < hashIdList.size(); m++)
+                        {
+                            if (std::find(ids.begin(), ids.end(), hashIdList[m]) == ids.end())
+                            {
+                                //LOG_INFO("ids.emplace_back(%d)", hashIdList[m]);
+                                ids.emplace_back(hashIdList[m]);
+                                partitions[hashIdList[m]].partitionCollisions.push_back(collider.second);
+                            }
+                        }
+                        colliderSphereCount++;
+                    }
+
+                    for (int j = 0; j < collider.second.collisionCapsules.size(); j++)
+                    {
+                        hashIdList = GetHashIdsFromPos((collider.second.collisionCapsules[j].End1_worldPos + collider.second.collisionCapsules[j].End2_worldPos)
+                            , (collider.second.collisionCapsules[j].End1_radius + collider.second.collisionCapsules[j].End2_radius) * 0.5f);
+                        for (int m = 0; m < hashIdList.size(); m++)
+                        {
+                            if (std::find(ids.begin(), ids.end(), hashIdList[m]) == ids.end())
+                            {
+                                //LOG_INFO("ids.emplace_back(%d)", hashIdList[m]);
+                                ids.emplace_back(hashIdList[m]);
+                                partitions[hashIdList[m]].partitionCollisions.push_back(collider.second);
+                            }
+                        }
+                        colliderCapsuleCount++;
+                    }
+                }
+            }
+        }
+    }
 
     //static bool done = false;
     //if (!done && player->loadedState->node) {
@@ -258,41 +371,42 @@ void UpdateActors()
         }
     }
 
+    //for (auto& a : actorEntries)
     concurrency::parallel_for_each(actorEntries.begin(), actorEntries.end(), [&](const auto& a)
-        {
-    auto actorsIterator = actors.find(a.id);
-    if (actorsIterator == actors.end())
     {
-        //logger.error("Sim Object not found in tracked actors\n");
-    }
-    else
-    {
-        auto& simObj = actorsIterator->second;
-
-        SimObj::Gender gender = IsActorMale(a.actor) ? SimObj::Gender::Male : SimObj::Gender::Female;
-
-        if (simObj.IsBound())
+        auto actorsIterator = actors.find(a.id);
+        if (actorsIterator == actors.end())
         {
-            // If gender and/or race have changed due to game state changes,
-            // reset simObj data to clear out outdated bone data.
-            if (gender != simObj.GetGender() ||
-                GetActorRaceEID(a.actor) != simObj.GetRaceEID())
-            {
-                //logger.Info("UpdateActors: Reset sim object\n");
-                simObj.Reset();
-            }
+            //logger.error("Sim Object not found in tracked actors\n");
         }
         else
         {
-            auto key = BuildActorKey(a.actor);
-            auto& composedConfig = BuildConfigForActor(a.actor, key);
+            auto& simObj = actorsIterator->second;
 
-            //logger.Error("UpdateActors: Setting key for actor %x...\n", a.id);
-            simObj.SetActorKey(key);
-            simObj.Bind(a.actor, boneNames, composedConfig);
+            SimObj::Gender gender = IsActorMale(a.actor) ? SimObj::Gender::Male : SimObj::Gender::Female;
+
+            if (simObj.IsBound())
+            {
+                // If gender and/or race have changed due to game state changes,
+                // reset simObj data to clear out outdated bone data.
+                if (gender != simObj.GetGender() ||
+                    GetActorRaceEID(a.actor) != simObj.GetRaceEID())
+                {
+                    //logger.Info("UpdateActors: Reset sim object\n");
+                    simObj.Reset();
+                }
+            }
+            else
+            {
+                auto key = BuildActorKey(a.actor);
+                auto& composedConfig = BuildConfigForActor(a.actor, key);
+
+                //logger.Error("UpdateActors: Setting key for actor %x...\n", a.id);
+                simObj.SetActorKey(key);
+                simObj.Bind(a.actor, boneNames, composedConfig);
+            }
         }
-    }
-        });
+    });
 
     concurrency::parallel_for_each(actorEntries.begin(), actorEntries.end(), [&](const auto& a)
         {
@@ -318,7 +432,9 @@ void UpdateActors()
                         auto& composedConfig = BuildConfigForActor(a.actor, key);
                         simObj.UpdateConfigs(composedConfig);
                     }
-                    simObj.Update(a.actor);
+                    //simObj.Update(a.actor);
+                    simObj.Update(a.actor, a.collisionsEnabled);
+                    
                 }
             }
         });

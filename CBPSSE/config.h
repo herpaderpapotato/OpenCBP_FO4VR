@@ -1,14 +1,17 @@
 #pragma once
-#include <unordered_set>
-#include <set>
-#include <map>
-#include <vector>
-
-#include <concurrent_vector.h>
+#include <atomic>
 #include <concurrent_unordered_map.h>
 #include <concurrent_unordered_set.h>
+#include <concurrent_vector.h>
+#include <map>
+#include <set>
+#include <unordered_set>
+#include <vector>
 
+#include "f4se/GameEvents.h"
 #include "f4se/GameReferences.h"
+
+#include "CollisionConfig.h"
 #include "unordered_dense.h"
 
 #pragma warning(disable : 4996)
@@ -42,6 +45,17 @@ struct actorOverrideData
     concurrency::concurrent_unordered_set<UInt32> actors;
     config_t config;
 };
+
+struct SpecificNPCBounceConfig
+{
+    Conditions conditions;
+    int ConditionPriority = 50;
+
+    config_t config;
+};
+
+extern std::vector<SpecificNPCBounceConfig> specificNPCBounceConfigList;
+
 
 extern bool playerOnly;
 extern bool femaleOnly;

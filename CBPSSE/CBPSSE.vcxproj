@@ -174,6 +174,11 @@
     <ClInclude Include="..\f4se\f4se\PapyrusVM.h" />
     <ClInclude Include="ActorEntry.h" />
     <ClInclude Include="ActorUtils.h" />
+    <ClInclude Include="Collision.h" />
+    <ClInclude Include="CollisionConfig.h" />
+    <ClInclude Include="CollisionHub.h" />
+    <ClInclude Include="dirent.h" />
+    <ClInclude Include="hash.h" />
     <ClInclude Include="INIReader.h" />
     <ClInclude Include="PapyrusOCBP.h" />
     <ClInclude Include="SimObj.h" />
@@ -181,6 +186,9 @@
     <ClInclude Include="log.h" />
     <ClInclude Include="Thing.h" />
     <ClInclude Include="unordered_dense.h" />
+    <ClInclude Include="Utility.hpp" />
+    <ClInclude Include="xs_Config.h" />
+    <ClInclude Include="xs_Float.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\detourxs-master\detourxs.cpp" />
@@ -188,6 +196,7 @@
     <ClCompile Include="..\f4se\f4se\GameData.cpp" />
     <ClCompile Include="..\f4se\f4se\GameExtraData.cpp" />
     <ClCompile Include="..\f4se\f4se\GameForms.cpp" />
+    <ClCompile Include="..\f4se\f4se\GameReferences.cpp" />
     <ClCompile Include="..\f4se\f4se\GameRTTI.cpp" />
     <ClCompile Include="..\f4se\f4se\GameTypes.cpp" />
     <ClCompile Include="..\f4se\f4se\GameUtilities.cpp" />
@@ -199,7 +208,12 @@
     <ClCompile Include="..\f4se\f4se\PapyrusNativeFunctions.cpp" />
     <ClCompile Include="..\f4se\f4se\PapyrusValue.cpp" />
     <ClCompile Include="..\f4se\f4se\PapyrusVM.cpp" />
+    <ClCompile Include="ActorEntry.cpp" />
     <ClCompile Include="ActorUtils.cpp" />
+    <ClCompile Include="Collision.cpp" />
+    <ClCompile Include="CollisionConfig.cpp" />
+    <ClCompile Include="CollisionHub.cpp" />
+    <ClCompile Include="hash.cpp" />
     <ClCompile Include="PapyrusOCBP.cpp" />
     <ClCompile Include="SimObj.cpp" />
     <ClCompile Include="config.cpp" />
@@ -210,6 +224,7 @@
     <ClCompile Include="Thing.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\f4se\f4se\GameRTTI.inl" />
     <None Include="exports.def" />
   </ItemGroup>
   <ItemGroup>

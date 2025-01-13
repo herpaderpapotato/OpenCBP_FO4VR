@@ -39,4 +39,7 @@ void CbpLogger::Error(const char *fmt...) {
 #endif
 }
 
-CbpLogger logger("Data\\F4SE\\Plugins\\cbp.log");
+
+
+CbpLogger logger("Data\\F4SE\\Plugins\\cbpc.log");
+

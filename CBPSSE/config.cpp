@@ -5,7 +5,9 @@
 #include "log.h"
 #include "SimObj.h"
 #include "Thing.h"
+#include "Utility.hpp"
 
+#include <fstream>
 #include <algorithm>
 #include <iostream>
 #include <iterator>
@@ -663,4 +665,8 @@ void DumpUsedSlotsToLog()
     {
         //logger.Info("used slot : %d\n", v);
     }
+}
+bool ConditionCheck(Actor* actor, ConditionItem& condition)
+{
+    return false;
 }

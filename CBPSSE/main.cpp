@@ -37,6 +37,7 @@ void MessageHandler(F4SEMessagingInterface::Message * msg)
             // Load initial config before the hook.
             //logger.Error("Loading Config\n");
             LoadConfig();
+            LoadCollisionConfig();
             //g_messagingInterface->RegisterListener(0, "F4SE", MessageHandler); 
             //logger.Error("Hooking Game\n");
             DoHook();
@@ -109,7 +110,7 @@ extern "C"
 
         // populate info structure
         info->infoVersion = PluginInfo::kInfoVersion;
-        info->name = "OCBP plugin";
+        info->name = "OCBPC plugin";
         info->version = 24;
 
         // store plugin handle so we can identify ourselves later
