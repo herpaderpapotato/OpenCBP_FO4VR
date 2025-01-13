@@ -48,5 +48,5 @@ jobs:
       with:
         name: cbp.dll
         # github outputs cbp.dll to D:\a\OpenCBP_FO4VR\OpenCBP_FO4VR\x64\Release\cbp.dll.
-        path: OpenCBP_FO4VR\x64\Release\cbp.dll
+        path: ${{env.SOLUTION_FILE_PATH}}\x64\Release\cbp.dll
             
