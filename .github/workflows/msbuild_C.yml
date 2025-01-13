@@ -6,6 +6,7 @@
 name: MSBuild_C
 
 on:
+  workflow_dispatch: {}
   push:
     branches: [ "master-OpenCBPC_FOVR" ]
   pull_request:
