@@ -4,7 +4,7 @@
 #include "f4se/BSSkin.h"
 
 class NiProperty;
-struct ID3D11Buffer;
+class ID3D11Buffer;
 
 // 38
 struct BSGeometrySegmentFlagData
@@ -171,8 +171,8 @@ public:
 	UInt32	unk15C;							// 15C
 
 	MEMBER_FN_PREFIX(BSGeometry);
-	// 
-	DEFINE_MEMBER_FN(UpdateShaderProperty, UInt32, 0x0206BB00);
+	// 523E6E56493B00C91D9A86659158A735D8A58371+B
+	DEFINE_MEMBER_FN(UpdateShaderProperty, UInt32, 0x02804860);
 };
 STATIC_ASSERT(sizeof(BSGeometry) == 0x160);
 
@@ -187,7 +187,7 @@ public:
 	float	unk16C;	// 16C
 
 	MEMBER_FN_PREFIX(BSTriShape);
-	DEFINE_MEMBER_FN(CreateDynamicTriShape, BSDynamicTriShape*, 0x01716A20, NiAVObject * unk1);
+	DEFINE_MEMBER_FN(CreateDynamicTriShape, BSDynamicTriShape*, 0x01D28030, NiAVObject * unk1);
 };
 STATIC_ASSERT(sizeof(BSTriShape) == 0x170);
 

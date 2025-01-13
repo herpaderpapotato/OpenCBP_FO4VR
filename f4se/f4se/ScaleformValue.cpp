@@ -1,12 +1,16 @@
 #include "f4se/ScaleformValue.h"
 #include "f4se/GameEvents.h"
 
-RelocAddr <_GetExtDisplayInfo> GetExtDisplayInfo(0x019FCFD0);
-RelocAddr <_SetExtDisplayInfoAlpha> SetExtDisplayInfoAlpha(0x019FD1A0);
-RelocAddr <_SetExtDisplayInfo> SetExtDisplayInfo(0x019FD020);
+RelocAddr <_GetFilterColorByType> GetFilterColorByType(0x0217CAF0);
+RelocAddr <_ApplyColorFilter> ApplyColorFilter(0x0217C7F0);
+RelocAddr <_SetDefaultColors> SetDefaultColors(0x0217CA40);
 
-RelocAddr <_PlayUISound>			PlayUISound(0x00FFF090);
-RelocAddr <_CreateBaseShaderTarget>	CreateBaseShaderTarget(0x00FBE450);
+RelocAddr <_GetExtDisplayInfo> GetExtDisplayInfo(0x02197A40);
+RelocAddr <_SetExtDisplayInfoAlpha> SetExtDisplayInfoAlpha(0x02197D50);
+RelocAddr <_SetExtDisplayInfo> SetExtDisplayInfo(0x02197BD0);
+
+RelocAddr <_PlayUISound>			PlayUISound(0x0133D7D0);
+RelocAddr <_CreateBaseShaderTarget>	CreateBaseShaderTarget(0x00B25580);
 
 GFxValue::~GFxValue()
 {
@@ -234,26 +238,27 @@ bool GFxValue::GotoLabeledFrame(const char * frameLabel, bool stop)
 
 void BSGFxShaderFXTarget::SetFilterColor(bool isHostile)
 {
-	HUDColorTypes type = kHUDColorTypes_GameplayHUDColor;
-	NiColor color;
+	UInt32 type = kColorNormal;
+	FilterColor color;
 	if(isHostile)
-		type = kHUDColorTypes_WarningColor;
-	HUDColorType = type;
+		type = kColorWarning;
+	colorType = type;
 
-	GetColorMultipliersFromType(&color);
-	EnableColorMultipliers(&color, 1.0f);
+	GetFilterColorByType(this, &color);
+	ApplyColorFilter(this, &color, 1.0f);
 }
 
 EventResult	BSGFxShaderFXTarget::ReceiveEvent(ApplyColorUpdateEvent * evn, void * dispatcher)
 {
-	NiColor color;
-	if(((shaderFX.enabledStates >> 1) & 1) && HUDColorType != kHUDColorTypes_CustomColor)
+	FilterColor color;
+	if(((colorFlags >> 1) & 1) && colorType != kColorUnk7)
 	{
-		EnableColorMultipliers(GetColorMultipliersFromType(&color), shaderFX.colorBrightness);
+		FilterColor * filtered = GetFilterColorByType(this, &color);
+		ApplyColorFilter(this, filtered, blue);
 	}
-	if((shaderFX.enabledStates & 1) && backgroundColorType != kHUDColorTypes_PowerArmorColorOnly)
+	if((colorFlags & 1) && unkAC != 4)
 	{
-		ApplyBackgroundColorFromType();
+		SetDefaultColors(this);
 	}
 	return kEvent_Continue;
 };

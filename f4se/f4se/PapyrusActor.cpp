@@ -101,7 +101,7 @@ namespace papyrusActor
 
 	TESObjectREFR * GetFurnitureReference(Actor * actor)
 	{
-		NiPointer<TESObjectREFR> refr;
+		TESObjectREFR * refr = nullptr;
 		if(!actor)
 			return nullptr;
 
@@ -119,13 +119,8 @@ namespace papyrusActor
 		else
 			furnitureHandle = data08->furnitureHandle1;
 
-		LookupREFRByHandle(furnitureHandle, refr);
+		LookupREFRByHandle(&furnitureHandle, &refr);
 		return refr;
-	}
-
-	bool IsProtected(Actor * actor)
-	{
-		return actor && (actor->uiFlags & 0x80000) != 0;
 	}
 }
 
@@ -142,7 +137,4 @@ void papyrusActor::RegisterFuncs(VirtualMachine* vm)
 
 	vm->RegisterFunction(
 		new NativeFunction0<Actor, TESObjectREFR*>("GetFurnitureReference", "Actor", papyrusActor::GetFurnitureReference, vm));
-
-	vm->RegisterFunction(
-		new NativeFunction0<Actor, bool>("IsProtected", "Actor", papyrusActor::IsProtected, vm));
 }

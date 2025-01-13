@@ -3,7 +3,6 @@
 #include "f4se_common/Utilities.h"
 #include "f4se/GameEvents.h"
 #include "f4se/ScaleformTypes.h"
-#include "f4se/NiTypes.h"
 
 class GFxMovieView;
 class GFxMovieRoot;
@@ -153,26 +152,28 @@ public:
 		GFxMovieView	* view;
 
 		MEMBER_FN_PREFIX(ObjectInterface);
-		DEFINE_MEMBER_FN(HasMember, bool, 0x019B2E10, void* pData, const char* name);
-		DEFINE_MEMBER_FN(GetMember, bool, 0x019AD750, void* pData, const char* name, GFxValue* pValue, bool isDisplayObj);
-		DEFINE_MEMBER_FN(SetMember, bool, 0x019CBBF0, void* pData, const char* name, const GFxValue* pValue, bool isDisplayObj);
-		DEFINE_MEMBER_FN(Invoke, bool, 0x019B4F10, void * pData, GFxValue * result, const char * name, GFxValue * args, UInt64 numArgs, UInt8 isDisplayObj);
-		DEFINE_MEMBER_FN(CreateEmptyMovieClip, bool, 0x019932C0, void* pData, GFxValue* pValue, const char* instanceName, SInt32 depth);
-		DEFINE_MEMBER_FN(AttachMovie, bool, 0x0198C760, void* pData, GFxValue* pValue, const char* symbolName, const char* instanceName, SInt32 depth, const void * initArgs);
-		DEFINE_MEMBER_FN(GetArraySize, UInt32, 0x019A96D0, void * pData);
-		DEFINE_MEMBER_FN(SetArraySize, bool, 0x01A75DB0, void * pData, UInt32 size);
-		DEFINE_MEMBER_FN(GetElement, bool, 0x019AC190, void * pData, UInt32 index, GFxValue * value);
-		DEFINE_MEMBER_FN(PushBack, bool, 0x019C24D0, void * pData, GFxValue * value);
-		DEFINE_MEMBER_FN(PopBack, bool, 0x019BF740, void * pData, GFxValue * value);
-		DEFINE_MEMBER_FN(VisitElements, void, 0x019D5860, void * pData, ArrayVisitor * visitor, UInt32 idx, SInt32 count);
-		DEFINE_MEMBER_FN(GotoLabeledFrame, bool, 0x019B2B90, void * pData, const char * frameLabel, bool stop);
-		DEFINE_MEMBER_FN(VisitMembers, void, 0x019D5990, void * pData, ObjVisitor * visitor, bool isDisplayObj);
-		DEFINE_MEMBER_FN(GetText, bool, 0x019B1390, void * pData, GFxValue * value, bool html);
-		DEFINE_MEMBER_FN(SetText, bool, 0x019CDE60, void * pData, const char * text, bool html);
-		DEFINE_MEMBER_FN(GetDisplayInfo, bool, 0x019ABAA0, void * pData, DisplayInfo * displayInfo);
-		DEFINE_MEMBER_FN(SetDisplayInfo, bool, 0x019CA4C0, void * pData, DisplayInfo * displayInfo);
-		DEFINE_MEMBER_FN(AddManaged_Internal, void, 0x019BB7E0, GFxValue * value, void * pData);
-		DEFINE_MEMBER_FN(ReleaseManaged_Internal, void, 0x019BB820, GFxValue * value, void * pData);
+		DEFINE_MEMBER_FN(HasMember, bool, 0x02139B10, void* pData, const char* name);
+		DEFINE_MEMBER_FN(GetMember, bool, 0x02131EC0, void* pData, const char* name, GFxValue* pValue, bool isDisplayObj);
+		DEFINE_MEMBER_FN(SetMember, bool, 0x0215A440, void* pData, const char* name, const GFxValue* pValue, bool isDisplayObj);
+		DEFINE_MEMBER_FN(Invoke, bool, 0x0213BB80, void * pData, GFxValue * result, const char * name, GFxValue * args, UInt64 numArgs, UInt8 isDisplayObj);
+		DEFINE_MEMBER_FN(CreateEmptyMovieClip, bool, 0x02113F20, void* pData, GFxValue* pValue, const char* instanceName, SInt32 depth);
+		DEFINE_MEMBER_FN(AttachMovie, bool, 0x0210B490, void* pData, GFxValue* pValue, const char* symbolName, const char* instanceName, SInt32 depth, const void * initArgs);
+		DEFINE_MEMBER_FN(GetArraySize, UInt32, 0x0212BCC0, void * pData);
+		// ref CC19A4FFD76032A42FBBC61E80011469E50993D7 (+4)
+		DEFINE_MEMBER_FN(SetArraySize, bool, 0x022269A0, void * pData, UInt32 size);
+		DEFINE_MEMBER_FN(GetElement, bool, 0x0212F9B0, void * pData, UInt32 index, GFxValue * value);
+		DEFINE_MEMBER_FN(PushBack, bool, 0x0214C7D0, void * pData, GFxValue * value);
+		DEFINE_MEMBER_FN(PopBack, bool, 0x021486F0, void * pData, GFxValue * value);
+		DEFINE_MEMBER_FN(VisitElements, void, 0x02164F40, void * pData, ArrayVisitor * visitor, UInt32 idx, SInt32 count);
+		DEFINE_MEMBER_FN(GotoLabeledFrame, bool, 0x02139550, void * pData, const char * frameLabel, bool stop);
+		// ref 1A7DD5D4A014A3E7CBF9A53D55DA751C11218613 (+1E7)
+		DEFINE_MEMBER_FN(VisitMembers, void, 0x02165070, void * pData, ObjVisitor * visitor, bool isDisplayObj);
+		DEFINE_MEMBER_FN(GetText, bool, 0x02137730, void * pData, GFxValue * value, bool html);
+		DEFINE_MEMBER_FN(SetText, bool, 0x0215D520, void * pData, const char * text, bool html);
+		DEFINE_MEMBER_FN(GetDisplayInfo, bool, 0x0212F0A0, void * pData, DisplayInfo * displayInfo);
+		DEFINE_MEMBER_FN(SetDisplayInfo, bool, 0x02158D50, void * pData, DisplayInfo * displayInfo);
+		DEFINE_MEMBER_FN(AddManaged_Internal, void, 0x02143A90, GFxValue * value, void * pData);
+		DEFINE_MEMBER_FN(ReleaseManaged_Internal, void, 0x02143AE0, GFxValue * value, void * pData);
 	};
 
 	ObjectInterface	* objectInterface;	// 00
@@ -231,7 +232,7 @@ public:
 	bool	SetDisplayInfo(DisplayInfo * displayInfo);
 
 	MEMBER_FN_PREFIX(GFxValue);
-	DEFINE_MEMBER_FN(RemoveChild_Internal, void, 0x019FC5D0, GFxValue * name);
+	DEFINE_MEMBER_FN(RemoveChild_Internal, void, 0x021971A0, GFxValue * name);
 };
 
 // 38
@@ -254,14 +255,14 @@ public:
 class BSGFxDisplayObject : public BSGFxObject
 {
 public:
-	BSGFxDisplayObject() : parent(nullptr) { }
+	BSGFxDisplayObject() : parent(nullptr), unk48(0), unk4C(0) { }
 	BSGFxDisplayObject(GFxValue * value) : BSGFxObject(value), parent(nullptr)
 	{
 		GFxValue width, height;
 		GetMember("width", &width);
 		GetMember("height", &height);
-		initialState.originalWidth = width.GetNumber();
-		initialState.originalHeight = height.GetNumber();
+		unk48 = width.GetNumber();
+		unk4C = height.GetNumber();
 	}
 	virtual ~BSGFxDisplayObject()
 	{
@@ -278,65 +279,18 @@ public:
 		GFxValue::DisplayInfo	displayInfo2;		// F0
 	};
 
-	struct InitialDisplayState
-	{
-		InitialDisplayState() : originalWidth(0), originalHeight(0) {}
-
-		float originalWidth;
-		float originalHeight;
-	};
-
-	BSGFxDisplayObject*		parent;			// 40
-	InitialDisplayState		initialState;	// 48
+	GFxValue	* parent;	// 40
+	float		unk48;		// 48
+	float		unk4C;		// 4C
 };
 STATIC_ASSERT(sizeof(BSGFxDisplayObject) == 0x50);
 STATIC_ASSERT(offsetof(BSGFxDisplayObject::BSDisplayInfo, displayInfo2) == 0xF0);
 
 class BSGFxShaderFXTarget;
 
-// 38
-struct UIShaderColors
+struct FilterColor
 {
-	UIShaderColors() : colorBrightness(0), enabledStates(0)
-	{
-		backgroundQuad.m_top = 0;
-		backgroundQuad.m_bottom = 0;
-		backgroundQuad.m_left = 0;
-		backgroundQuad.m_right = 0;
-	}
-
-	enum Flags
-	{
-		kBackgroundQuad			= (1 << 0),
-		kColorMultiplier		= (1 << 1),
-		kVerticalGradient		= (1 << 2),
-		kUseAlphaForDropshadow	= (1 << 3)
-	};
-
-	NiRect<float> backgroundQuad;	// 00
-	NiColorA backgroundColor;		// 10
-	NiColorA colorMultipliers;		// 20
-	float colorBrightness;			// 30
-	int enabledStates;				// 34
-};
-
-// 48
-struct UIShaderFXInfo
-{
-	NiRect<float> renderQuad;	// 00
-	UIShaderColors shaderFX;	// 10
-};
-
-enum HUDColorTypes
-{
-	kHUDColorTypes_NoColorMultiplier = 0,
-	kHUDColorTypes_MenuNoColorBackground,
-	kHUDColorTypes_GameplayHUDColor,
-	kHUDColorTypes_PlayerSetColor,
-	kHUDColorTypes_PowerArmorColorOnly,
-	kHUDColorTypes_WarningColor,
-	kHUDColorTypes_AltWarningColor,
-	kHUDColorTypes_CustomColor
+	float r, g, b;
 };
 
 // B0
@@ -346,35 +300,70 @@ class BSGFxShaderFXTarget : public BSGFxDisplayObject,
 public:
 	BSGFxShaderFXTarget() { }
 	BSGFxShaderFXTarget(GFxValue * source) : BSGFxDisplayObject(source), 
-		HUDColorType(kHUDColorTypes_NoColorMultiplier), backgroundColorType(kHUDColorTypes_NoColorMultiplier) {  }//{ CALL_MEMBER_FN(this, Impl_ctor)(source); }
+		unk58(0), unk60(0), unk68(0), unk6C(0), unk70(0), unk74(0), unk78(0), unk7C(0), red(0), 
+		green(0), blue(0), multiplier(0), unk94(0), unk98(0), unkA0(0), colorType(0), unkAC(0) {  }//{ CALL_MEMBER_FN(this, Impl_ctor)(source); }
 	virtual ~BSGFxShaderFXTarget();// { CALL_MEMBER_FN(this, Impl_dtor)(); };
 
-	virtual void AppendShaderFXInfos(BSTArray<UIShaderFXInfo>* colorFX, BSTArray<UIShaderFXInfo>* backgroundFX)
+	virtual void Unk_01(void * unk1, void * unk2)
 	{
-		Impl_AppendShaderFXInfos(colorFX, backgroundFX);
+		Impl_Fn1(unk1, unk2);
 	};
 
 	virtual	EventResult	ReceiveEvent(ApplyColorUpdateEvent * evn, void * dispatcher);
 
-	UIShaderColors shaderFX;						// 38
-	BSTArray<BSGFxShaderFXTarget*> shaderFXObjects;	// 
-	HUDColorTypes HUDColorType;						// 
-	HUDColorTypes backgroundColorType;
+	enum ColorTypes
+	{
+		kColorUnk1 = 0,
+		kColorUnk2,
+		kColorNormal,
+		kColorUnk3,
+		kColorUnk4,
+		kColorWarning,
+		kColorUnk6,
+		kColorUnk7
+	};
+
+	UInt64	unk58;			// 58
+	UInt64	unk60;			// 60
+	float	unk68;			// 68
+	float	unk6C;			// 6C
+	float	unk70;			// 70
+	float	unk74;			// 74
+	float	unk78;			// 78
+	float	unk7C;			// 7C
+	float	red;			// 80
+	float	green;			// 84
+	float	blue;			// 88
+	UInt32	colorFlags;		// 8C
+	float	multiplier;		// 90
+	UInt32	unk94;			// 94
+	UInt64	unk98;			// 98
+	UInt64	unkA0;			// A0
+	UInt32	colorType;		// A8
+	UInt32	unkAC;			// AC
 
 	DEFINE_STATIC_HEAP(Heap_Allocate, Heap_Free)
 
 	void SetFilterColor(bool isHostile);
 
-	DEFINE_MEMBER_FN_1(Impl_ctor, BSGFxShaderFXTarget *, 0x019E8C60, GFxValue * source);
-	DEFINE_MEMBER_FN_2(Impl_ctor_2, BSGFxShaderFXTarget*, 0x019E8D30, GFxValue* source, const char* memberName);
-	DEFINE_MEMBER_FN_2(Impl_ctor_3, BSGFxShaderFXTarget*, 0x019E8E00, GFxMovieView* source, const char* memberName);
-	DEFINE_MEMBER_FN_0(Impl_dtor, void, 0x019E8BB0);
-	DEFINE_MEMBER_FN_2(Impl_AppendShaderFXInfos, void, 0x019E8FA0, BSTArray<UIShaderFXInfo>* colorFX, BSTArray<UIShaderFXInfo>* backgroundFX);
-	DEFINE_MEMBER_FN_1(GetColorMultipliersFromType, NiColor*, 0x019EA110, NiColor* result); // This function acquires the HUD color by type e.g. normal, PA, hostile
-	DEFINE_MEMBER_FN_2(EnableColorMultipliers, void, 0x019E9E00, const NiColor* color, float brightness); // Sets explicit component filter color
-	DEFINE_MEMBER_FN_0(ApplyBackgroundColorFromType, void, 0x019EA050);
+	// 98B654B565F35633CBE8804A5CBF84646AE30A1B+9
+	DEFINE_MEMBER_FN_1(Impl_ctor, BSGFxShaderFXTarget *, 0x0217B5D0, GFxValue * source);
+	DEFINE_MEMBER_FN_0(Impl_dtor, void, 0x0217B530);
+	DEFINE_MEMBER_FN_2(Impl_Fn1, void, 0x0217BA50, void * unk1, void * unk2);
 };
+STATIC_ASSERT(offsetof(BSGFxShaderFXTarget, red) == 0x80);
 STATIC_ASSERT(sizeof(BSGFxShaderFXTarget) == 0xB0);
+
+// This function acquires the HUD color by type e.g. normal, PA, hostile
+typedef FilterColor * (* _GetFilterColorByType)(BSGFxShaderFXTarget * component, FilterColor * color);
+extern RelocAddr <_GetFilterColorByType> GetFilterColorByType;
+
+// Sets explicit component filter color
+typedef void (* _ApplyColorFilter)(BSGFxShaderFXTarget * component, FilterColor * color, float unk1);
+extern RelocAddr <_ApplyColorFilter> ApplyColorFilter;
+
+typedef void (* _SetDefaultColors)(BSGFxShaderFXTarget * component);
+extern RelocAddr <_SetDefaultColors> SetDefaultColors;
 
 typedef void * (* _GetExtDisplayInfo)(BSGFxDisplayObject::BSDisplayInfo * dInfo, BSGFxDisplayObject * target);
 extern RelocAddr <_GetExtDisplayInfo> GetExtDisplayInfo;

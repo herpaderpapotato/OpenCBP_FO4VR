@@ -9,29 +9,23 @@
 
 ICriticalSection		s_taskQueueLock;
 std::queue<ITaskDelegate*>	s_tasks;
-std::vector<ITaskDelegate*>	s_tasksPermanent;
 
 ICriticalSection		s_uiQueueLock;
 std::queue<ITaskDelegate*>	s_uiQueue;
 
 typedef bool (* _MessageQueueProcessTask)(void * messageQueue, float timeout, UInt32 unk1);
-RelocAddr <_MessageQueueProcessTask> MessageQueueProcessTask(0x00BBF150);
+RelocAddr <_MessageQueueProcessTask> MessageQueueProcessTask(0x00DA87C0);
 _MessageQueueProcessTask MessageQueueProcessTask_Original = nullptr;
 
-RelocAddr <uintptr_t> ProcessEventQueue_HookTarget(0x01965340 + 0xFA5);
+RelocAddr <uintptr_t> ProcessEventQueue_HookTarget(0x020CB000 + 0xF00);
 typedef void (* _ProcessEventQueue_Internal)(void * unk1);
-RelocAddr <_ProcessEventQueue_Internal> ProcessEventQueue_Internal(0x01A09CB0);
+RelocAddr <_ProcessEventQueue_Internal> ProcessEventQueue_Internal(0x0219DC00);
 
 bool MessageQueueProcessTask_Hook(void * messageQueue, float timeout, UInt32 unk1)
 {
 	bool result = MessageQueueProcessTask_Original(messageQueue, timeout, unk1);
 
 	s_taskQueueLock.Enter();
-	
-	for (auto it = s_tasksPermanent.begin(); it != s_tasksPermanent.end(); it++) {
-		(*it)->Run();
-	}
-	
 	while (!s_tasks.empty())
 	{
 		ITaskDelegate * cmd = s_tasks.front();
@@ -48,13 +42,6 @@ void TaskInterface::AddTask(ITaskDelegate * task)
 {
 	s_taskQueueLock.Enter();
 	s_tasks.push(task);
-	s_taskQueueLock.Leave();
-}
-
-void TaskInterface::AddTaskPermanent(ITaskDelegate* task)
-{
-	s_taskQueueLock.Enter();
-	s_tasksPermanent.push_back(task);
 	s_taskQueueLock.Leave();
 }
 
@@ -94,13 +81,12 @@ void Hooks_Threads_Commit(void)
 			{
 				Xbyak::Label retnLabel;
 
-				mov(rax, rsp);
-				mov(ptr[rax + 8], rbx);
+				mov(ptr[rsp+0x10], rbx);
 
 				jmp(ptr [rip + retnLabel]);
 
 				L(retnLabel);
-				dq(MessageQueueProcessTask.GetUIntPtr() + 7);
+				dq(MessageQueueProcessTask.GetUIntPtr() + 5);
 			}
 		};
 
@@ -110,7 +96,7 @@ void Hooks_Threads_Commit(void)
 
 		MessageQueueProcessTask_Original = (_MessageQueueProcessTask)codeBuf;
 
-		g_branchTrampoline.Write6Branch(MessageQueueProcessTask.GetUIntPtr(), (uintptr_t)MessageQueueProcessTask_Hook);
+		g_branchTrampoline.Write5Branch(MessageQueueProcessTask.GetUIntPtr(), (uintptr_t)MessageQueueProcessTask_Hook);
 	}
 
 	g_branchTrampoline.Write5Call(ProcessEventQueue_HookTarget.GetUIntPtr(), (uintptr_t)ProcessEventQueue_Hook);

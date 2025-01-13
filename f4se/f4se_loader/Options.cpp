@@ -10,11 +10,11 @@ Options::Options()
 	,m_optionsOnly(false)
 	,m_waitForClose(false)
 	,m_verbose(false)
+	,m_moduleInfo(false)
 	,m_skipLauncher(true)
 	,m_launchSteam(false)
 	,m_noTimeout(false)
 	,m_forceSteamLoader(false)
-	,m_waitForDebugger(false)
 	,m_affinity(0)
 {
 	//
@@ -142,6 +142,10 @@ bool Options::Read(int argc, char ** argv)
 				{
 					m_verbose = true;
 				}
+				else if(!_stricmp(arg, "minfo"))
+				{
+					m_moduleInfo = true;
+				}
 				else if(!_stricmp(arg, "noskiplauncher"))
 				{
 					m_skipLauncher = false;
@@ -177,10 +181,6 @@ bool Options::Read(int argc, char ** argv)
 				{
 					m_forceSteamLoader = true;
 				}
-				else if (!_stricmp(arg, "waitfordebugger"))
-				{
-					m_waitForDebugger = true;
-				}
 				else
 				{
 					_ERROR("unknown switch (%s)", arg);
@@ -210,7 +210,7 @@ void Options::PrintUsage(void)
 {
 	gLog.SetPrintLevel(IDebugLog::kLevel_VerboseMessage);
 
-	_MESSAGE("usage: f4se_loader [options]");
+	_MESSAGE("usage: f4sevr_loader [options]");
 	_MESSAGE("");
 	_MESSAGE("options:");
 	_MESSAGE("  -h, -help - print this options list");
@@ -227,13 +227,12 @@ void Options::PrintUsage(void)
 	_MESSAGE("  -crconly - just identify the EXE, don't launch anything");
 	_MESSAGE("  -waitforclose - wait for the launched program to close");
 	_MESSAGE("  -v - print verbose messages to the console");
+	_MESSAGE("  -minfo - log information about the DLLs loaded in to the target process");
 	_MESSAGE("  -noskiplauncher - does not skip the default Bethesda launcher window");
 	_MESSAGE("                    note: specifying this option may cause compatibility problems");
 	_MESSAGE("  -launchsteam - attempt to launch steam if it is not running");
-	_MESSAGE("  -notimeout - don't automatically terminate the process if the proxy takes too long");
 	_MESSAGE("  -affinity <mask> - set the processor affinity mask");
-	_MESSAGE("  -forcesteamloader - does nothing, ignored for backwards compatibility");
-	_MESSAGE("  -waitfordebugger - wait for a debugger to attach before beginning execution");
+	_MESSAGE("  -forcesteamloader - override exe type detection and use steam loader");
 }
 
 bool Options::Verify(void)

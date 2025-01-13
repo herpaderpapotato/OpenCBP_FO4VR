@@ -3,7 +3,6 @@
 #include "f4se/GameForms.h"
 #include "f4se/GameEvents.h"
 #include "f4se/GameCustomization.h"
-#include "f4se/GameHandle.h"
 #include "f4se/NiObjects.h"
 
 class BSActiveGraphIfInactiveEvent;
@@ -15,6 +14,14 @@ class ExtraDataList;
 class TESWorldSpace;
 class BGSScene;
 class TESQuest;
+
+typedef bool (* _CreateHandleByREFR)(UInt32 * handle, TESObjectREFR * ref);
+extern RelocAddr <_CreateHandleByREFR> CreateHandleByREFR;
+
+typedef bool (* _LookupREFRByHandle)(UInt32 * handle, TESObjectREFR ** ref);
+extern RelocAddr <_LookupREFRByHandle> LookupREFRByHandle;
+
+extern RelocPtr <UInt32> g_invalidRefHandle;
 
 typedef bool (* _HasDetectionLOS)(Actor* source, TESObjectREFR* target, UInt8 * unk1);
 extern RelocAddr<_HasDetectionLOS> HasDetectionLOS;
@@ -46,11 +53,6 @@ public:
 	{
 		if((InterlockedDecrement(&m_uiRefCount) & kMask_RefCount) == 0)
 			DeleteThis();
-	}
-
-	UInt32 QRefCount() const
-	{
-		return m_uiRefCount & kMask_RefCount;
 	}
 };
 
@@ -236,16 +238,15 @@ public:
 	UInt32										unk104;					// 104
 	UInt32										unk108;					// 108
 
-	void IncRef() { handleRefObject.IncRef(); }
-	void DecRef() { handleRefObject.DecRef(); }
+	UInt32 CreateRefHandle(void);
 
 	MEMBER_FN_PREFIX(TESObjectREFR);
-	DEFINE_MEMBER_FN(GetReferenceName, const char *, 0x004BF380);
-	DEFINE_MEMBER_FN(GetWorldspace, TESWorldSpace*, 0x004C3030);
-	DEFINE_MEMBER_FN(GetInventoryWeight, float, 0x004B3B50);
-	DEFINE_MEMBER_FN(GetCarryWeight, float, 0x00BEB080);
-	// 
-	DEFINE_MEMBER_FN_1(ForEachAlias, void, 0x004AA940, IAliasFunctor * functor);
+	DEFINE_MEMBER_FN(GetReferenceName, const char *, 0x003F3A70);
+	DEFINE_MEMBER_FN(GetWorldspace, TESWorldSpace*, 0x003F75A0);
+	DEFINE_MEMBER_FN(GetInventoryWeight, float, 0x003E8770);
+	DEFINE_MEMBER_FN(GetCarryWeight, float, 0x00DD7C90);
+	// 7055D6CB4B64E11E63908512704F8871CEC025D3+11E
+	DEFINE_MEMBER_FN_1(ForEachAlias, void, 0x003DFC00, IAliasFunctor * functor);
 };
 STATIC_ASSERT(offsetof(TESObjectREFR, parentCell) == 0xB8);
 STATIC_ASSERT(offsetof(TESObjectREFR, baseForm) == 0xE0);
@@ -266,7 +267,7 @@ public:
 	virtual void	Unk_CC();
 	virtual void	Unk_CD();
 	virtual void	Unk_CE();
-	virtual void	Unk_CF();
+	virtual void	Update(float delta);
 	virtual void	Unk_D0();
 	virtual void	Unk_D1();
 	virtual void	Unk_D2();
@@ -407,9 +408,9 @@ public:
 				EquippedWeaponData	* equippedData;	// 20
 			};
 
-			tArray<EquipData> equipData;		// 288
+			EquipData * equipData;		// 288
 
-			UInt64	unk290[(0x3A0 - 0x2A0) >> 3];
+			UInt64	unk290[(0x3A0 - 0x290) >> 3];
 			UInt32	unk3A0;				// 3A0
 			UInt32	furnitureHandle1;	// 3A4
 			UInt32	furnitureHandle2;	// 3A8
@@ -425,12 +426,11 @@ public:
 			UInt16	unk494;				// 494
 			UInt16	unk496;				// 496 - somekind of dirty flag?
 		};
-		STATIC_ASSERT(offsetof(Data08, furnitureHandle1) == 0x3A4);
 
 		Data08 * unk08;	// 08
 
 		MEMBER_FN_PREFIX(MiddleProcess);
-		DEFINE_MEMBER_FN(UpdateEquipment, void, 0x00CA12C0, Actor * actor, UInt32 flags); 
+		DEFINE_MEMBER_FN(UpdateEquipment, void, 0x00EB4B40, Actor * actor, UInt32 flags); 
 	};
 	MiddleProcess * middleProcess;					// 300
 	UInt64	unk308[(0x338-0x308)/8];
@@ -455,10 +455,7 @@ public:
 	TESRace			* race;				// 418
 	UInt64			unk420;				// 420
 	ActorEquipData	* equipData;		// 428
-	UInt64	unk430;						// 430
-	UInt32	unk438;						// 438
-	UInt32	uiFlags;					// 43C
-	UInt64	unk440[(0x490-0x440)/8];	// 440
+	UInt64	unk430[(0x490-0x430)/8];	// 430
 
 	bool IsPlayerTeammate()
 	{
@@ -467,14 +464,12 @@ public:
 	bool GetEquippedExtraData(UInt32 slotIndex, ExtraDataList ** extraData);
 
 	MEMBER_FN_PREFIX(Actor);
-	DEFINE_MEMBER_FN(QueueUpdate, void, 0x00BEE320, bool bDoFaceGen, UInt32 unk2, bool DoQueue, UInt32 flags); // 0, 0, 1, 0
-	DEFINE_MEMBER_FN(IsHostileToActor, bool, 0x00BF5BD0, Actor * actor);
-	DEFINE_MEMBER_FN(UpdateEquipment, void, 0x004BBED0); // TESObjectREFR::ReplaceModel
+	DEFINE_MEMBER_FN(QueueUpdate, void, 0x00DDAD60, bool bDoFaceGen, UInt32 unk2, bool DoQueue, UInt32 flags); // 0, 0, 1, 0
+	DEFINE_MEMBER_FN(IsHostileToActor, bool, 0x00DE1CD0, Actor * actor);
+	DEFINE_MEMBER_FN(UpdateEquipment, void, 0x003F0580); 
 };
 STATIC_ASSERT(offsetof(Actor, equipData) == 0x428);
-STATIC_ASSERT(offsetof(Actor, uiFlags) == 0x43C);
 STATIC_ASSERT(offsetof(Actor::MiddleProcess::Data08, equipData) == 0x288);
-STATIC_ASSERT(sizeof(Actor) == 0x490);
 
 // E10
 class PlayerCharacter : public Actor
@@ -513,7 +508,8 @@ public:
 	tArray<ObjectiveData> objData;	// 7D8
 	UInt64	unk458[(0xB70 - 0x7F0) / 8];	// 7F0
 	ActorEquipData	* playerEquipData;	// B70 - First person?
-	NiNode			* firstPersonSkeleton;	// B78
+	UInt64 unkb76[(0xFE8 - 0xB78) / 8];
+	NiNode			* firstPersonSkeleton;	// B78   VR looks to be FE8
 	UInt64	unkB68[(0xD00-0xB80)/8];	// B78
 	tArray<BGSCharacterTint::Entry*> * tints;	// D00
 	UInt64	unkC90[(0xE10-0xCF8)/8];	// CF8
@@ -523,4 +519,4 @@ extern RelocPtr <PlayerCharacter*> g_player;
 
 STATIC_ASSERT(offsetof(PlayerCharacter, menuOpenClose) == 0x490);
 STATIC_ASSERT(offsetof(PlayerCharacter, playerEquipData) == 0xB70);
-STATIC_ASSERT(offsetof(PlayerCharacter, tints) == 0xD00);
+STATIC_ASSERT(offsetof(PlayerCharacter, tints) == 0x1170);

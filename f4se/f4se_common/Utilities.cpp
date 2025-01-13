@@ -56,7 +56,7 @@ const std::string & GetConfigPath()
 		std::string	runtimePath = GetRuntimeDirectory();
 		if(!runtimePath.empty())
 		{
-			s_configPath = runtimePath + "Data\\F4SE\\f4se.ini";
+			s_configPath = runtimePath + "Data\\F4SE\\f4sevr.ini";
 
 			_MESSAGE("config path = %s", s_configPath.c_str());
 		}
@@ -157,51 +157,6 @@ void * GetIATAddr(void * module, const char * searchDllName, const char * search
 	}
 
 	return NULL;
-}
-
-const void * GetResourceLibraryProcAddress(const HMODULE module, const char * exportName)
-{
-	auto * base = (const UInt8 *)(uintptr_t(module) & ~3);
-	auto * dosHeader = (const IMAGE_DOS_HEADER *)base;
-	auto * ntHeader = (const IMAGE_NT_HEADERS *)(base + dosHeader->e_lfanew);
-	auto * exportTable =
-		(const IMAGE_EXPORT_DIRECTORY *)(base + ntHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
-
-	auto * exportAddresses = (const UInt32 *)(base + exportTable->AddressOfFunctions);	// RVA array
-	auto * exportNameOrdinals = (const UInt16 *)(base + exportTable->AddressOfNameOrdinals);	// index in to exportAddresses
-	auto * exportNames = (const UInt32 *)(base + exportTable->AddressOfNames);	// RVA array
-
-	const void * result = nullptr;
-
-	for(UInt32 i = 0; i < exportTable->NumberOfNames; i++)
-	{
-		UInt32 nameRVA = exportNames[i];
-		auto * name = (const char *)(base + nameRVA);
-
-		if(!strcmp(exportName, name))
-		{
-			UInt32 addrIdx = exportNameOrdinals[i];
-			if(addrIdx < exportTable->NumberOfFunctions)
-			{
-				UInt32 addrRVA = exportAddresses[addrIdx];
-				result = (const void *)(base + addrRVA);
-
-				break;
-			}
-		}
-	}
-
-	return result;
-}
-
-bool Is64BitDLL(const HMODULE module)
-{
-	auto * base = (const UInt8 *)(uintptr_t(module) & ~3);
-	auto * dosHeader = (const IMAGE_DOS_HEADER *)base;
-	auto * ntHeader = (const IMAGE_NT_HEADERS *)(base + dosHeader->e_lfanew);
-
-	// FileHeader is PE32/64 independent
-	return ntHeader->FileHeader.Machine == IMAGE_FILE_MACHINE_AMD64;
 }
 
 #pragma warning (push)

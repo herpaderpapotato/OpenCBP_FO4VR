@@ -14,7 +14,7 @@
 
 namespace Serialization
 {
-	const char * kSavegamePath = "\\My Games\\" SAVE_FOLDER_NAME "\\";
+	const char * kSavegamePath = "\\My Games\\Fallout4VR\\";
 
 	// file format internals
 
@@ -276,60 +276,62 @@ namespace Serialization
 
 	bool ResolveFormId(UInt32 formId, UInt32 * formIdOut)
 	{
-		UInt32	modID = formId >> 24;
+		UInt8	modID = formId >> 24;
 
 		if (modID == 0xFF)
 		{
 			*formIdOut = formId;
 			return true;
 		}
-
-		if (modID == 0xFE)
+		else if(modID == 0xFE)
 		{
-			modID = formId >> 12;
-		}
+			UInt16	modLightID = (formId & 0x00FFF000) >> 12;
+			UInt32 lightIndex = (UInt32)ResolveLightModIndex(modLightID);
+			if(lightIndex == 0xFFFF)
+				return false;
 
-		UInt32	loadedModID = ResolveModIndex(modID);
-		if (loadedModID < 0xFF)
-		{
-			*formIdOut = (formId & 0x00FFFFFF) | (((UInt32)loadedModID) << 24);
+			*formIdOut = (formId & 0xFF000FFF) | (lightIndex << 12);
 			return true;
 		}
-		else if (loadedModID > 0xFF)
-		{
-			*formIdOut = (loadedModID << 12) | (formId & 0x00000FFF);
-			return true;
-		}
-		return false;
+
+		UInt8	loadedModID = ResolveModIndex(modID);
+
+		if (loadedModID == 0xFF) 
+			return false;
+
+		// fixup ID, success
+		*formIdOut = (formId & 0x00FFFFFF) | (((UInt32)loadedModID) << 24);
+		return true;
 	}
 
 	bool ResolveHandle(UInt64 handle, UInt64 * handleOut)
 	{
-		UInt32	modID = (handle & 0xFF000000) >> 24;
+		UInt8	modID = handle >> 24;
 
 		if (modID == 0xFF)
 		{
 			*handleOut = handle;
 			return true;
 		}
-
-		if (modID == 0xFE)
+		else if(modID == 0xFE)
 		{
-			modID = (handle >> 12) & 0xFFFFF;
-		}
+			UInt16	modLightID = (handle & 0x00FFF000) >> 12;
+			UInt32 lightIndex = (UInt32)ResolveLightModIndex(modLightID);
+			if(lightIndex == 0xFFFF)
+				return false;
 
-		UInt64	loadedModID = (UInt64)ResolveModIndex(modID);
-		if (loadedModID < 0xFF)
-		{
-			*handleOut = (handle & 0xFFFFFFFF00FFFFFF) | (((UInt64)loadedModID) << 24);
+			*handleOut = (handle & 0xFFFFFFFFFF000FFF) | (lightIndex << 12);
 			return true;
 		}
-		else if (loadedModID > 0xFF)
-		{
-			*handleOut = (handle & 0xFFFFFFFF00000FFF) | (loadedModID << 12);
-			return true;
-		}
-		return false;
+
+		UInt8	loadedModID = ResolveModIndex(modID);
+
+		if (loadedModID == 0xFF) 
+			return false;
+
+		// fixup ID, success
+		*handleOut = (handle & 0xFFFFFFFF00FFFFFF) | (((UInt64)loadedModID) << 24);
+		return true;
 	}
 
 	// internal event handlers

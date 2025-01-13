@@ -10,8 +10,6 @@
 #include "f4se/ScaleformCallbacks.h"
 #include "f4se/ScaleformValue.h"
 
-#include "f4se/NiTypes.h"
-
 typedef GFxValue* (*_GetChildElement)(GFxValue * parent, GFxValue & child, const char * path);
 extern RelocAddr<_GetChildElement>	GetChildElement;
 
@@ -38,9 +36,9 @@ class UIMessageManager
 {
 public:
 	MEMBER_FN_PREFIX(UIMessageManager);
-	DEFINE_MEMBER_FN(SendUIMessage, void, 0x0196E230, BSFixedString& menuName, UInt32 type);
-	// 
-	DEFINE_MEMBER_FN(SendUIMessageEx, void, 0x00FFCEA0, BSFixedString& menuName, UInt32 type, UIMessage * pExtraData);
+	DEFINE_MEMBER_FN(SendUIMessage, void, 0x020D69E0, BSFixedString& menuName, UInt32 type);
+	// 325A22C9C57B8175C01F1E071B4E272401994375+CB
+	DEFINE_MEMBER_FN(SendUIMessageEx, void, 0x01339F00, BSFixedString& menuName, UInt32 type, UIMessage * pExtraData);
 };
 extern RelocPtr<UIMessageManager*>	g_uiMessageManager;
 
@@ -51,52 +49,45 @@ class IMenu :
 public:
 	enum
 	{
-		kFlag_None = 0,
-		kFlag_PausesGame = 1 << 0,
-		kFlag_AlwaysOpen = 1 << 1,
-		kFlag_UsesCursor = 1 << 2,
-		kFlag_UsesMenuContext = 1 << 3,
-		kFlag_Modal = 1 << 4,  // prevents lower movies with this flag from advancing
-		kFlag_FreezeFrameBackground = 1 << 5,
-		kFlag_OnStack = 1 << 6,
-		kFlag_DisablePauseMenu = 1 << 7,
-		kFlag_RequiresUpdate = 1 << 8,
-		kFlag_TopmostRenderedMenu = 1 << 9,
-		kFlag_UpdateUsesCursor = 1 << 10,
-		kFlag_AllowSaving = 1 << 11,
-		kFlag_RendersOffscreenTargets = 1 << 12,
-		kFlag_InventoryItemMenu = 1 << 13,
-		kFlag_DontHideCursorWhenTopmost = 1 << 14,
-		kFlag_CustomRendering = 1 << 15,
-		kFlag_AssignCursorToRenderer = 1 << 16,
-		kFlag_ApplicationMenu = 1 << 17,
-		kFlag_HasButtonBar = 1 << 18,
-		kFlag_IsTopButtonBar = 1 << 19,
-		kFlag_AdvancesUnderPauseMenu = 1 << 20,
-		kFlag_RendersUnderPauseMenu = 1 << 21,
-		kFlag_UsesBlurredBackground = 1 << 22,
-		kFlag_CompanionAppAllowed = 1 << 23,
-		kFlag_FreezeFramePause = 1 << 24,
-		kFlag_SkipRenderDuringFreezeFrameScreenshot = 1 << 25,
-		kFlag_LargeScaleformRenderCacheMode = 1 << 26,
-		kFlag_UsesMovementToDirection = 1 << 27
+		//Confirmed
+		kFlag_PauseGame = 0x01,
+		kFlag_DoNotDeleteOnClose = 0x02,
+		kFlag_ShowCursor = 0x04,
+		kFlag_EnableMenuControl = 0x08, // 1, 2
+		kFlag_ShaderdWorld = 0x20,
+		kFlag_Open = 0x40,//set it after open.
+		kFlag_DoNotPreventGameSave = 0x800,
+		kFlag_ApplyDropDownFilter = 0x8000, //
+		kFlag_BlurBackground = 0x400000,
+
+		//Unconfirmed
+		kFlag_Modal = 0x10,
+		kFlag_PreventGameLoad = 0x80,
+		kFlag_Unk0100 = 0x100,
+		kFlag_HideOther = 0x200,
+		kFlag_DisableInteractive = 0x4000,
+		kFlag_UpdateCursorOnPlatformChange = 0x400,
+		kFlag_Unk1000 = 0x1000,
+		kFlag_ItemMenu = 0x2000,
+		kFlag_Unk10000 = 0x10000,	// mouse cursor
+		kFlag_Unk800000 = 0x800000
 	};
 	virtual UInt32	ProcessMessage(UIMessage * msg) = 0;//???
-	virtual void	AdvanceMovie(float unk0, void * unk1) = 0; //210E8C0
-	virtual void	PreDisplay(void) { };
-	virtual void	PostDisplay(void) { };
-	virtual bool	PassesRenderConditionText(UInt32 menuRenderContext, const BSFixedString& unk1) = 0;
-	virtual void	SetIsTopButtonBar(bool unk0) = 0;
-	virtual void	OnMenuStackChanged(BSFixedString & menuName, bool unk1) = 0;            //UInt64 = 0;            //UInt64
-	virtual void	OnMenuDisplayStateChanged(void) = 0;
-	virtual void	OnAddedToMenuStack(void) = 0;
-	virtual void	OnRemovedFromMenuStack(void) = 0;
-	virtual bool	CanAdvanceMovie(bool unk0) = 0;
-	virtual bool	CanHandleWhenDisabled(const ButtonEvent*) { return false; };
-	virtual bool	OnButtonEventRelease(const BSFixedString& controlID) { return false; };
-	virtual bool	CacheShaderFXQuadsForRenderer_Impl(void) = 0;
-	virtual void	TransferCachedShaderFXQuadsForRenderer(const BSFixedString&) = 0;
-	virtual void	SetViewportRect(const NiRect<float>& unk0) = 0;
+	virtual void	DrawNextFrame(float unk0, void * unk1) = 0; //210E8C0
+	virtual void *	Unk_05(void) { return nullptr; }; //return 0;
+	virtual void *	Unk_06(void) { return nullptr; }; //return 0;
+	virtual bool	Unk_07(UInt32 unk0, void * unk1) = 0;
+	virtual void	Unk_08(UInt8 unk0) = 0;
+	virtual void	Unk_09(BSFixedString & menuName, bool unk1) = 0;            //UInt64 = 0;            //UInt64
+	virtual void	Unk_0A(void) = 0;
+	virtual void	Unk_0B(void) = 0;
+	virtual void	Unk_0C(void) = 0;
+	virtual bool	Unk_0D(bool unk0) = 0;
+	virtual bool	Unk_0E(void) { return false; };
+	virtual bool	CanProcessControl(BSFixedString & controlID) { return false; };
+	virtual bool	Unk_10(void) = 0;
+	virtual void	Unk_11(void) = 0;
+	virtual void	Unk_12(void * unk0) = 0;
 
 	GFxValue		stage;			// 20
 	GFxMovieView	* movie;		// 40
@@ -146,11 +137,6 @@ public:
 STATIC_ASSERT(offsetof(IMenu, movie) == 0x40);
 STATIC_ASSERT(offsetof(IMenu, flags) == 0x58);
 
-struct HUDModeType
-{
-	BSFixedString modeString;
-};
-
 // E0
 class GameMenuBase : public IMenu
 {
@@ -159,58 +145,51 @@ public:
 	virtual ~GameMenuBase();
 
 	// BSInputEventUser overrides
-	virtual bool ShouldHandleEvent(InputEvent* inputEvent /* = nullptr */) override;
 	virtual void OnButtonEvent(ButtonEvent * inputEvent) override { Impl_OnGameMenuBaseButtonEvent(inputEvent); };
 
 	// IMenu overrides
 	virtual void	Invoke(Args * args) override { }
 	virtual void	RegisterFunctions() override { }
 	virtual UInt32	ProcessMessage(UIMessage * msg) override { return Impl_ProcessMessage(msg); };//???
-	virtual void	AdvanceMovie(float unk0, void * unk1) override { return Impl_AdvanceMovie(unk0, unk1); }; //render,HUD menu uses this function to update its HUD components.
-	virtual bool	PassesRenderConditionText(UInt32 menuRenderContext, const BSFixedString& unk1) override { return Impl_PassesRenderConditionText(menuRenderContext, unk1); };
-	virtual void	SetIsTopButtonBar(bool unk0) override { return Impl_SetIsTopButtonBar(unk0); };
-	virtual void	OnMenuStackChanged(BSFixedString & menuName, bool unk1)  override { return Impl_OnMenuStackChanged(menuName, unk1); };            //UInt64
-	virtual void	OnMenuDisplayStateChanged(void) override { return Impl_OnMenuDisplayStateChanged(); };
-	virtual void	OnAddedToMenuStack(void) override { return Impl_OnAddedToMenuStack(); }
-	virtual void	OnRemovedFromMenuStack(void) override { return Impl_OnRemovedFromMenuStack(); };
-	virtual bool	CanAdvanceMovie(bool unk0) override { return Impl_CanAdvanceMovie(unk0); }
-	virtual bool	CanHandleWhenDisabled(const ButtonEvent*) override { return false; };
-	virtual bool	OnButtonEventRelease(const BSFixedString & controlID) override { return false; };
-	virtual bool	CacheShaderFXQuadsForRenderer_Impl(void) override { return Impl_CacheShaderFXQuadsForRenderer(); } //90 - E0
-	virtual void	TransferCachedShaderFXQuadsForRenderer(const BSFixedString& unk1) override { return Impl_TransferCachedShaderFXQuadsForRenderer(unk1); };
-	virtual void	SetViewportRect(const NiRect<float>& unk0) override { return Impl_SetViewportRect(unk0); }
-	virtual void	AppendShaderFXInfos(BSTArray<UIShaderFXInfo>* colorFX, BSTArray<UIShaderFXInfo>* backgroundFX) { return Impl_AppendShaderFXInfos(colorFX, backgroundFX); }
+	virtual void	DrawNextFrame(float unk0, void * unk1) override { return Impl_DrawNextFrame(unk0, unk1); }; //render,HUD menu uses this function to update its HUD components.
+	virtual bool	Unk_07(UInt32 unk0, void * unk1) override { return Impl_Unk07(unk0, unk1); };
+	virtual void	Unk_08(UInt8 unk0) override { return Impl_Unk08(unk0); };
+	virtual void	Unk_09(BSFixedString & menuName, bool unk1)  override { return Impl_Unk09(menuName, unk1); };            //UInt64
+	virtual void	Unk_0A(void) override { return Impl_Unk0A(); };
+	virtual void	Unk_0B(void) override { return Impl_Unk0B(); }
+	virtual void	Unk_0C(void) override { return Impl_Unk0C(); };
+	virtual bool	Unk_0D(bool unk0) override { return Impl_Unk0D(unk0); }
+	virtual bool	Unk_0E(void) override { return false; };
+	virtual bool	CanProcessControl(BSFixedString & controlID) override { return false; };
+	virtual bool	Unk_10(void) override { return Impl_Unk10(); } //90 - E0
+	virtual void	Unk_11(void) override { return Impl_Unk11(); };
+	virtual void	Unk_12(void * unk0) override { return Impl_Unk12(unk0); }
+	virtual void	Unk_13(void * unk0, void * unk1) { return Impl_Unk13(unk0, unk1); }
 
-	BSTArray<BSGFxShaderFXTarget*>	shaderFXObjects;
-	BSGFxShaderFXTarget*			filterHolder;
-	class ButtonHintBar*			buttonHintBar;
-	BSTArray<UIShaderFXInfo>		cachedColorFX;
-	BSTArray<UIShaderFXInfo>		cachedBackgroundFX;
-	BSReadWriteLock					cachedQuadsLock;
-	BSTOptional<HUDModeType>		MenuHUDMode;
+	tArray<BSGFxDisplayObject*>		subcomponents;					// 70
+	BSGFxShaderFXTarget				* shaderTarget;					// 88
+	void							* unk90;						// 90
+	UInt64							unk98[(0xE0 - 0x98) >> 3];		// 98
 
 	DEFINE_STATIC_HEAP(ScaleformHeap_Allocate, ScaleformHeap_Free)
 private:
-	// ??_7GameMenuBase@@6B@
-
-	DEFINE_MEMBER_FN_0(Impl_ctor, void *, 0x00A1E720);
-	DEFINE_MEMBER_FN_0(Impl_dtor, void *, 0x00A1E7E0);
-	DEFINE_MEMBER_FN_2(Impl_AdvanceMovie, void, 0x019FDFF0, float unk0, void * unk1);
-	DEFINE_MEMBER_FN_1(Impl_ProcessMessage, UInt32, 0x019FDEC0, UIMessage * msg);
-	DEFINE_MEMBER_FN_2(Impl_PassesRenderConditionText, bool, 0x019FE430, UInt32 unk0, const BSFixedString& unk1);
-	DEFINE_MEMBER_FN_1(Impl_SetIsTopButtonBar, void, 0x00A1ED10, UInt8 unk0);
-	DEFINE_MEMBER_FN_2(Impl_OnMenuStackChanged, void, 0x019FE670, BSFixedString & menuName, bool unk1);
-	DEFINE_MEMBER_FN_0(Impl_OnMenuDisplayStateChanged, void, 0x00A1ED80);
-	DEFINE_MEMBER_FN_0(Impl_OnAddedToMenuStack, void, 0x00A1EE40);
-	DEFINE_MEMBER_FN_0(Impl_OnRemovedFromMenuStack, void, 0x00A1EE80);
-	DEFINE_MEMBER_FN_1(Impl_CanAdvanceMovie, bool, 0x019FE7C0, bool unk0);
-	DEFINE_MEMBER_FN_0(Impl_CacheShaderFXQuadsForRenderer, bool, 0x00A1EB20);
-	DEFINE_MEMBER_FN_1(Impl_TransferCachedShaderFXQuadsForRenderer, void, 0x00A1EBB0, const BSFixedString& unk1);
-	DEFINE_MEMBER_FN_1(Impl_SetViewportRect, void, 0x00A1EC20, const NiRect<float>& unk0);
-	DEFINE_MEMBER_FN_2(Impl_AppendShaderFXInfos, void, 0x00A1EC70, BSTArray<UIShaderFXInfo>* colorFX, BSTArray<UIShaderFXInfo>* backgroundFX);
+	DEFINE_MEMBER_FN_0(Impl_ctor, void *, 0x00B53E20);
+	DEFINE_MEMBER_FN_0(Impl_dtor, void *, 0x00B53F10);
+	DEFINE_MEMBER_FN_2(Impl_DrawNextFrame, void, 0x02198D40, float unk0, void * unk1);
+	DEFINE_MEMBER_FN_1(Impl_ProcessMessage, UInt32, 0x02198CC0, UIMessage * msg);
+	DEFINE_MEMBER_FN_2(Impl_Unk07, bool, 0x021991C0, UInt32 unk0, void * unk1);
+	DEFINE_MEMBER_FN_1(Impl_Unk08, void, 0x00B543C0, UInt8 unk0);
+	DEFINE_MEMBER_FN_2(Impl_Unk09, void, 0x02199400, BSFixedString & menuName, bool unk1);
+	DEFINE_MEMBER_FN_0(Impl_Unk0A, void, 0x00B54430);
+	DEFINE_MEMBER_FN_0(Impl_Unk0B, void, 0x00B544F0);
+	DEFINE_MEMBER_FN_0(Impl_Unk0C, void, 0x00B54530)
+	DEFINE_MEMBER_FN_1(Impl_Unk0D, bool, 0x02199550, bool unk0);
+	DEFINE_MEMBER_FN_0(Impl_Unk10, bool, 0x00B541E0);
+	DEFINE_MEMBER_FN_0(Impl_Unk11, void, 0x00B54270);
+	DEFINE_MEMBER_FN_1(Impl_Unk12, void, 0x00B542E0, void * unk0);
+	DEFINE_MEMBER_FN_2(Impl_Unk13, void, 0x00B54330, void * unk0, void * unk1);
 };
-STATIC_ASSERT(offsetof(GameMenuBase, filterHolder) == 0x88);
-STATIC_ASSERT(sizeof(GameMenuBase) == 0xE0);
+STATIC_ASSERT(offsetof(GameMenuBase, shaderTarget) == 0x88);
 
 // 218
 class LooksMenu : public GameMenuBase
@@ -227,46 +206,30 @@ public:
 	UInt32	unk1E4;				// 1E4
 	UInt64	unk1E8[(0x218-0x1E8)/8];
 
-	DEFINE_MEMBER_FN_0(LoadCharacterParameters, void, 0x00A2BD70);	// This function updates all the internals from the current character
-																	// It's followed by a call to onCommitCharacterPresetChange
+	DEFINE_MEMBER_FN_0(LoadCharacterParameters, void, 0x00B64060); // This function updates all the internals from the current character
+																 // It's followed by a call to onCommitCharacterPresetChange
 };
 STATIC_ASSERT(offsetof(LooksMenu, nextBoneID) == 0x150);
 
-enum PowerArmorHUDVisibilityRule
-{
-	kPowerArmorHUDVisibilityRule_Ignores_PA_HUD_Visibility = 0x0,
-	kPowerArmorHUDVisibilityRule_OnlyWithPAHUDVisible,
-	kPowerArmorHUDVisibilityRule_OnlyWithPAHUDNotVisible
-};
-
 // 20
-struct HUDModes
+template <class T>
+class HUDContextArray
 {
-	BSTArray<HUDModeType>		validHUDModes;
-	PowerArmorHUDVisibilityRule powerArmorHUDVisibilityRule;
-	bool						bCanBeVisible;
-};
-
-// 
-struct HUDModeInitParams
-{
-	const HUDModeType*			validHUDModes;
-	UInt32						numHUDModes;
-	PowerArmorHUDVisibilityRule	powerArmorHUDVisibilityRule;
-};
-
-struct CountdownTimer
-{
-	UInt64 StartTime;
-	UInt64 EndTime;
-	bool IsActive;
+public:
+	T			* entries;	// 00
+	UInt32		count;		// 08
+	UInt32		unk0C;		// 0C
+	UInt32		flags;		// 10
+	UInt32		unk14;		// 14
+	UInt32		unk18;		// 18
+	bool		unk1C;		// 1C
 };
 
 // F8
 class HUDComponentBase : public BSGFxShaderFXTarget
 {
 public:
-	HUDComponentBase(GFxValue * parent, const char * componentName, const HUDModeInitParams* initParams);
+	HUDComponentBase(GFxValue * parent, const char * componentName, HUDContextArray<BSFixedString> * contextList);
 	virtual ~HUDComponentBase();
 
 	virtual bool Unk_02(void * unk1) { return false; }
@@ -275,27 +238,30 @@ public:
 	virtual void UpdateVisibilityContext(void * unk1);
 	virtual void ColorizeComponent();
 	virtual bool IsVisible() { return Impl_IsVisible(); }
-	virtual bool Unk_08() { return hudModes.bCanBeVisible; }
+	virtual bool Unk_08() { return contexts.unk1C; }
 
-	CountdownTimer					fadeOutTimer;				// B0
-	HUDModes						hudModes;					// C8
-	float							fadePerSecond;				// E8
-	UInt32							fadeState;					// EC
-	bool							bFlashElementsRegistered;	// F0
-	bool							bWidgetDisplayEnabled;		// F1
-	bool							bDisplayWarningColor;		// F2 - This chooses the warning color over the default color
-	UInt8							padF3[5];					// F3
+	UInt64							unkB0;			// B0
+	UInt64							unkB8;			// B8
+	UInt64							unkC0;			// C0
+	HUDContextArray<BSFixedString>	contexts;		// C8
+	float							unkE8;			// E8
+	UInt32							unkEC;			// EC
+	UInt8							unkF0;			// F0
+	UInt8							unkF1;			// F1
+	bool							isWarning;		// F2 - This chooses the warning color over the default color
+	UInt8							padF3[5];		// F3
 
 	MEMBER_FN_PREFIX(HUDComponentBase);
-	DEFINE_MEMBER_FN_3(Impl_ctor, HUDComponentBase *, 0x00968A30, GFxValue * parent, const char * componentName, const HUDModeInitParams* initParams);
-	DEFINE_MEMBER_FN_0(Impl_IsVisible, bool, 0x00968D50);
-	DEFINE_MEMBER_FN_0(Impl_UpdateComponent, void, 0x00968AD0);
+	DEFINE_MEMBER_FN_3(Impl_ctor, HUDComponentBase *, 0x00A221A0, GFxValue * parent, const char * componentName, HUDContextArray<BSFixedString> * contextList);
+	DEFINE_MEMBER_FN_0(Impl_IsVisible, bool, 0x00A22520);
+	DEFINE_MEMBER_FN_0(Impl_UpdateComponent, void, 0x00A22240);
+	
 };
-STATIC_ASSERT(offsetof(HUDComponentBase, hudModes) == 0xC8);
-STATIC_ASSERT(offsetof(HUDComponentBase, fadePerSecond) == 0xE8);
+STATIC_ASSERT(offsetof(HUDComponentBase, contexts) == 0xC8);
+STATIC_ASSERT(offsetof(HUDComponentBase, unkE8) == 0xE8);
 STATIC_ASSERT(sizeof(HUDComponentBase) == 0xF8);
 
-typedef bool (* _HasHUDContext)(HUDModes* contexts, void * unk1);
+typedef bool (* _HasHUDContext)(HUDContextArray<BSFixedString> * contexts, void * unk1);
 extern RelocAddr <_HasHUDContext> HasHUDContext;
 
 
@@ -391,6 +357,7 @@ public:
 		}
 	};
 
+
 	virtual ~PipboyObject();
 
 	tHashSet<PipboyTableItem, BSFixedString>	table;	// 18
@@ -426,8 +393,6 @@ public:
 	}
 };
 
-extern RelocPtr <BSReadWriteLock> g_menuTableLock;
-
 // 250 ?
 class UI
 {
@@ -451,8 +416,9 @@ public:
 	template<typename T>
 	void ForEachMenu(T & menuFunc)
 	{
-		const BSWriteLocker l(g_menuTableLock.GetPtr());
+		g_menuTableLock->LockForReadAndWrite();
 		menuTable.ForEach(menuFunc);
+		g_menuTableLock->Release();
 	}
 
 	bool UnregisterMenu(BSFixedString & name, bool force = false);
@@ -472,8 +438,9 @@ public:
 
 protected:
 	MEMBER_FN_PREFIX(UI);
-	DEFINE_MEMBER_FN(RegisterMenu, void, 0x01967400, const char * name, CreateFunc creator, UInt64 unk1);
-	DEFINE_MEMBER_FN(IsMenuOpen, bool, 0x01965050, const BSFixedString & name);
+	DEFINE_MEMBER_FN(RegisterMenu, void, 0x020CC9C0, const char * name, CreateFunc creator, UInt64 unk1);
+	DEFINE_MEMBER_FN(IsMenuOpen, bool, 0x020CAC20, const BSFixedString & name);
 };
 
+extern RelocPtr <BSReadWriteLock> g_menuTableLock;
 extern RelocPtr <UI*> g_ui;

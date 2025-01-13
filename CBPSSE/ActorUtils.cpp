@@ -18,7 +18,7 @@ std::string actorUtils::GetActorRaceEID(Actor* actor)
 {
     if (!IsActorValid(actor))
     {
-        logger.Info("GetActorRaceEID: no actor!\n");
+        //logger.Info("GetActorRaceEID: no actor!\n");
         return "";
     }
 
@@ -31,20 +31,20 @@ NiAVObject* actorUtils::GetBaseSkeleton(Actor* actor)
 
     if (!actorUtils::IsActorValid(actor))
     {
-        logger.Error("%s: No valid actor\n", __func__);
+        //logger.Error("%s: No valid actor\n", __func__);
         return NULL;
     }
     auto loadedState = actor->unkF0;
     if (!loadedState || !loadedState->rootNode)
     {
-        logger.Error("%s:No loaded state for actor %08x\n", __func__, actor->formID);
+        //logger.Error("%s:No loaded state for actor %08x\n", __func__, actor->formID);
         return NULL;
     }
     auto obj = loadedState->rootNode->GetObjectByName(&skeletonNif_name);
 
     if (!obj)
     {
-        logger.Error("%s: Couldn't get name for loaded state for actor %08x\n", __func__, actor->formID);
+        //logger.Error("%s: Couldn't get name for loaded state for actor %08x\n", __func__, actor->formID);
         return NULL;
     }
 
@@ -60,13 +60,13 @@ bool actorUtils::IsActorFilteredActor(Actor* actor, UInt32 priority)
 
     if (isFilterInverted)
     {
-        logger.Info("%s: actor %08x is actor whitelisted\n", __func__, actor->formID);
+        //logger.Info("%s: actor %08x is actor whitelisted\n", __func__, actor->formID);
         // Result is in the whitelist
         result = !(overrideActors.count(actor->formID) > 0);
     }
     else
     {
-        logger.Info("%s: actor %08x is actor blacklisted\n", __func__, actor->formID);
+        //logger.Info("%s: actor %08x is actor blacklisted\n", __func__, actor->formID);
         // Result is in the blacklist
         result = (overrideActors.count(actor->formID) > 0);
     }
@@ -81,7 +81,7 @@ bool actorUtils::IsActorMale(Actor* actor)
 {
     if (!IsActorValid(actor))
     {
-        logger.Info("IsActorMale: no actor!\n");
+        //logger.Info("IsActorMale: no actor!\n");
         return false;
     }
 
@@ -100,12 +100,12 @@ bool actorUtils::IsActorInPowerArmor(Actor* actor)
     bool isInPowerArmor = false;
     if (!IsActorValid(actor))
     {
-        logger.Info("IsActorInPowerArmor: no actor!\n");
+        //logger.Info("IsActorInPowerArmor: no actor!\n");
         return true;
     }
     if (!actor->extraDataList)
     {
-        logger.Info("IsActorInPowerArmor: no extraDataList!\n");
+        //logger.Info("IsActorInPowerArmor: no extraDataList!\n");
         return true;
     }
 
@@ -118,7 +118,7 @@ bool actorUtils::IsActorTrackable(Actor* actor)
 {
     if (!IsActorValid(actor))
     {
-        logger.Info("%s: actor %x is not trackable.\n", __func__, actor->formID);
+        //logger.Info("%s: actor %x is not trackable.\n", __func__, actor->formID);
         return false;
     }
 
@@ -134,19 +134,19 @@ bool actorUtils::IsActorValid(Actor* actor)
 {
     if (!actor)
     {
-        logger.Info("%s: actor %x is null\n", __func__, actor->formID);
+        //logger.Info("%s: actor %x is null\n", __func__, actor->formID);
         return false;
     }
     if (actor->flags & TESForm::kFlag_IsDeleted)
     {
-        logger.Info("%s: actor %x has deleted flag\n", __func__, actor->formID);
+        //logger.Info("%s: actor %x has deleted flag\n", __func__, actor->formID);
         return false;
     }
     if (actor->unkF0 && actor->unkF0->rootNode)
     {
         return true;
     }
-    logger.Info("%s: actor %x is not in a valid state\n", __func__, actor->formID);
+    //logger.Info("%s: actor %x is not in a valid state\n", __func__, actor->formID);
     return false;
 }
 
@@ -154,7 +154,7 @@ bool actorUtils::IsBoneInWhitelist(Actor* actor, std::string boneName)
 {
     if (!IsActorValid(actor))
     {
-        logger.Info("IsBoneInWhitelist: actor is not valid.\n");
+        //logger.Info("IsBoneInWhitelist: actor is not valid.\n");
         return false;
     }
     bool result;
@@ -190,12 +190,12 @@ const actorUtils::EquippedArmor actorUtils::GetActorEquippedArmor(Actor* actor, 
 
     if (!actorUtils::IsActorValid(actor))
     {
-        logger.Error("Actor is not valid");
+        //logger.Error("Actor is not valid");
         return actorUtils::EquippedArmor{ nullptr, nullptr };
     }
     if (!actor->equipData || !actor->equipData->slots)
     {
-        logger.Error("Actor has no equipData");
+        //logger.Error("Actor has no equipData");
         return actorUtils::EquippedArmor{ nullptr, nullptr };
     }
 
@@ -206,7 +206,7 @@ const actorUtils::EquippedArmor actorUtils::GetActorEquippedArmor(Actor* actor, 
     {
         if (!actor->equipData->slots[slot].item)
         {
-            logger.Error("slot %d item check failed.", slot);
+            //logger.Error("slot %d item check failed.", slot);
             // redundant check but just in case
             return actorUtils::EquippedArmor{ nullptr, nullptr };
         }
@@ -270,7 +270,7 @@ config_t actorUtils::BuildConfigForActor(Actor* actor, UInt64 hashKey)
     auto found = cachedConfigs.find(hashKey);
     if (found != cachedConfigs.end())
     {
-        logger.Info("%s: Cached config found for actor %08x: %x\n", __func__, actor->formID, hashKey);
+        //logger.Info("%s: Cached config found for actor %08x: %x\n", __func__, actor->formID, hashKey);
         return found->second;
     }
 
@@ -307,7 +307,7 @@ config_t actorUtils::BuildConfigForActor(Actor* actor, UInt64 hashKey)
             }
             else
             {
-                logger.Info("%s: actor %08x is not filtered for priority %d\n", __func__, actor->formID, priority);
+                //logger.Info("%s: actor %08x is not filtered for priority %d\n", __func__, actor->formID, priority);
             }
         }
         else // There is an armor slot override entry
@@ -318,7 +318,7 @@ config_t actorUtils::BuildConfigForActor(Actor* actor, UInt64 hashKey)
             {
                 if (IsActorFilteredActor(actor, priority))
                 {
-                    logger.Info("%s: actor %08x is filtered for priority %d\n", __func__, actor->formID, priority);
+                    //logger.Info("%s: actor %08x is filtered for priority %d\n", __func__, actor->formID, priority);
                     continue;
                 }
             }
@@ -340,7 +340,7 @@ config_t actorUtils::BuildConfigForActor(Actor* actor, UInt64 hashKey)
             // whitelist filter
             if (orData.isFilterInverted)
             {
-                logger.Info("%s: actor %08x is armor whitelisted\n", __func__, actor->formID);
+                //logger.Info("%s: actor %08x is armor whitelisted\n", __func__, actor->formID);
 
                 //  Check config's filter IDs against found slot's IDs 
                 for (auto & equipped : equippedList)
@@ -370,7 +370,7 @@ config_t actorUtils::BuildConfigForActor(Actor* actor, UInt64 hashKey)
             // blacklist filter
             if (!orData.isFilterInverted && !equippedList.empty())
             {
-                logger.Info("%s: actor %08x is armor blacklisted\n", __func__, actor->formID);
+                //logger.Info("%s: actor %08x is armor blacklisted\n", __func__, actor->formID);
 
                 //  Check config's filter IDs against found slot's IDs 
                 for (auto& equipped : equippedList)
@@ -399,7 +399,7 @@ config_t actorUtils::BuildConfigForActor(Actor* actor, UInt64 hashKey)
         }
     }
 
-    logger.Info("%s: Inserting cached config for actor %08x: %x\n", __func__, actor->formID, hashKey);
+    //logger.Info("%s: Inserting cached config for actor %08x: %x\n", __func__, actor->formID, hashKey);
     cachedConfigs.insert(std::make_pair(hashKey, baseConfig));
     //logger.Info("%s: exiting\n", __func__);
     return baseConfig;

@@ -28,19 +28,19 @@
 class BSScaleformManager;
 
 typedef BSScaleformManager * (* _BSScaleformManager_Ctor)(BSScaleformManager * mem);
-RelocAddr <_BSScaleformManager_Ctor> BSScaleformManager_Ctor(0x019FF4E0);
+RelocAddr <_BSScaleformManager_Ctor> BSScaleformManager_Ctor(0x0219A300);
 _BSScaleformManager_Ctor BSScaleformManager_Ctor_Original = nullptr;
 
 typedef UInt32 (* _BSScaleformTint)(BSGFxShaderFXTarget * value, float * colors, float multiplier);
-RelocAddr <_BSScaleformTint> BSScaleformTint(0x019E9E00);
+RelocAddr <_BSScaleformTint> BSScaleformTint(0x0217C7F0);
 _BSScaleformTint BSScaleformTint_Original = nullptr;
 
-RelocAddr <uintptr_t> ScaleformInitHook_Start(0x019FFC10 + 0x226);
+RelocAddr <uintptr_t> ScaleformInitHook_Start(0x0219A9A0 + 0x188);
 
-RelocAddr <uintptr_t> IMenuCreateHook_Start(0x01965340 + 0xA0F);
+RelocAddr <uintptr_t> IMenuCreateHook_Start(0x020CB000 + 0x97E);
 
-// 
-RelocAddr <uintptr_t> SetMenuName(0x01561C70);
+// D7C709A779249EBC0C50BB992E9FD088A33B282F+76
+RelocAddr <uintptr_t> SetMenuName(0x01BC17E0);
 
 //// plugin API
 struct ScaleformPluginInfo
@@ -332,7 +332,7 @@ public:
 		bool result = false;
 		if(texture)
 		{
-			BSWriteLocker locker(&s_mountedTexturesLock);
+			BSReadAndWriteLocker locker(&s_mountedTexturesLock);
 
 			auto & textures = s_mountedTextures[menuName];
 			auto sit = textures.find(texture);
@@ -379,7 +379,7 @@ public:
 		bool result = false;
 		if(texture)
 		{
-			BSWriteLocker locker(&s_mountedTexturesLock);
+			BSReadAndWriteLocker locker(&s_mountedTexturesLock);
 			auto it = s_mountedTextures.find(menuName);
 			if(it != s_mountedTextures.end())
 			{
@@ -418,7 +418,7 @@ public:
 		// Unmount textures if the menu is being destroyed
 		if(!evn->isOpen)
 		{
-			BSWriteLocker locker(&s_mountedTexturesLock);
+			BSReadAndWriteLocker locker(&s_mountedTexturesLock);
 			auto it = s_mountedTextures.find(evn->menuName.c_str());
 			if(it != s_mountedTextures.end())
 			{
@@ -671,7 +671,7 @@ void Hooks_Scaleform_Commit()
 				call(ptr [rip + funcLabel1]);
 
 				// Pull the IMenu off the stack and call our new function
-				mov(rcx, ptr[rsp + 0x40]);
+				mov(rcx, ptr[rsp+0x48]);
 				call(ptr [rip + funcLabel2]);
 
 				// Jump back to the original location

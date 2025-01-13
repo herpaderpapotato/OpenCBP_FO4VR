@@ -28,14 +28,6 @@ namespace papyrusForm
 		}
 	}
 
-	BSFixedString GetEditorID(TESForm* thisForm)
-	{
-		if (!thisForm)
-			return BSFixedString();
-
-		return thisForm->GetEditorID();
-	}
-
 	float GetWeight(TESForm* thisForm)
 	{
 		if (!thisForm)
@@ -292,9 +284,6 @@ void papyrusForm::RegisterFuncs(VirtualMachine* vm)
 
 	vm->RegisterFunction(
 		new NativeFunction1 <TESForm, void, BSFixedString> ("SetName", "Form", papyrusForm::SetName, vm));
-
-	vm->RegisterFunction(
-		new NativeFunction0 <TESForm, BSFixedString> ("GetEditorID", "Form", papyrusForm::GetEditorID, vm));
 
 	vm->RegisterFunction(
 		new NativeFunction0 <TESForm, BSFixedString> ("GetDescription", "Form", papyrusForm::GetDescription, vm));

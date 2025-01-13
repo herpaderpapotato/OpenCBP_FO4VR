@@ -3,7 +3,6 @@
 #include "common/IFileStream.h"
 #include <shlobj.h>
 #include <string>
-#include "f4se_common/f4se_version.h"
 #include "f4se/GameStreams.h"
 #include "f4se/GameSettings.h"
 
@@ -85,7 +84,7 @@ namespace Translation
 		ASSERT(SUCCEEDED(SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, appdataPath)));
 
 		std::string	modlistPath = appdataPath;
-		modlistPath += "\\" SAVE_FOLDER_NAME "\\plugins.txt";
+		modlistPath += "\\Fallout4VR\\plugins.txt";
 
 		// Parse mod list file to acquire translation filenames
 		IFileStream modlistFile;

@@ -1,17 +1,17 @@
 #include "f4se/GameMenus.h"
 
-// 
-RelocPtr <UI*> g_ui(0x02E66400);
+// 2CA5233612B3158658DB6DB9C90FD0258F1836E2+AD
+RelocPtr <UI*> g_ui(0x05932320);
 
-RelocAddr <_HasHUDContext> HasHUDContext(0x00989450);
+RelocAddr <_HasHUDContext> HasHUDContext(0x00A52D40);
 
-RelocAddr<_GetChildElement>		GetChildElement(0x019E8400);
+RelocAddr<_GetChildElement>		GetChildElement(0x0217AC20);
 
-// 
-RelocPtr <UIMessageManager*>	g_uiMessageManager(0x02E665F0);
+// 2CA5233612B3158658DB6DB9C90FD0258F1836E2+F1
+RelocPtr <UIMessageManager*>	g_uiMessageManager(0x05932558);
 
-// 
-RelocPtr <BSReadWriteLock> g_menuTableLock(0x03B00C70);
+// 14E7973A11651D308EC8038B44489C65D037B794+12
+RelocPtr <BSReadWriteLock> g_menuTableLock(0x065D8618);
 
 bool UI::IsMenuOpen(const BSFixedString & menuName)
 {
@@ -77,7 +77,7 @@ IMenu * UI::GetMenuByMovie(GFxMovieView * movie)
 
 bool UI::UnregisterMenu(BSFixedString & name, bool force)
 {
-	BSWriteLocker locker(g_menuTableLock);
+	BSReadAndWriteLocker locker(g_menuTableLock);
 	MenuTableItem * item = menuTable.Find(&name);
 	if (!item || (item->menuInstance && !force)) {
 		return false;
@@ -86,18 +86,25 @@ bool UI::UnregisterMenu(BSFixedString & name, bool force)
 	return menuTable.Remove(&name);
 }
 
-HUDComponentBase::HUDComponentBase(GFxValue * parent, const char * componentName, const HUDModeInitParams* initParams)
+HUDComponentBase::HUDComponentBase(GFxValue * parent, const char * componentName, HUDContextArray<BSFixedString> * contextList)
 {
-	Impl_ctor(parent, componentName, initParams);
+	Impl_ctor(parent, componentName, contextList);
 }
 
 HUDComponentBase::~HUDComponentBase()
 {
+	for(UInt32 i = 0; i < contexts.count; i++)
+	{
+		contexts.entries[i].Release();
+	}
+
+	Heap_Free(contexts.entries);
+	contexts.count = 0;
 }
 
 void HUDComponentBase::UpdateVisibilityContext(void * unk1)
 {
-	HasHUDContext(&hudModes, unk1);
+	HasHUDContext(&contexts, unk1);
 	bool bVisible = IsVisible();
 	double alpha = 0.0;
 	if(bVisible) {
@@ -109,12 +116,12 @@ void HUDComponentBase::UpdateVisibilityContext(void * unk1)
 	SetExtDisplayInfoAlpha(unk2, alpha);
 	SetExtDisplayInfo(&dInfo);
 
-	fadeState = bVisible == false;
+	unkEC = bVisible == false;
 }
 
 void HUDComponentBase::ColorizeComponent()
 {
-	SetFilterColor(bDisplayWarningColor);
+	SetFilterColor(isWarning);
 }
 
 GameMenuBase::GameMenuBase() : IMenu()
@@ -125,26 +132,4 @@ GameMenuBase::GameMenuBase() : IMenu()
 GameMenuBase::~GameMenuBase()
 {
 	Impl_dtor();
-}
-
-bool GameMenuBase::ShouldHandleEvent(InputEvent* inputEvent)
-{
-	if (inputEvent->handled != 2 && inputEvent->eventType == InputEvent::kEventType_Button)
-	{
-		ButtonEvent* buttonEvent = static_cast<ButtonEvent*>(inputEvent);
-
-		if (buttonEvent->isDown == 0.0f)
-		{
-			if (buttonEvent->timer >= 0.0f)
-			{
-				return true;
-			}
-		}
-		else if (buttonEvent->timer == 0.0f)
-		{
-			return true;
-		}
-	}
-
-	return false;
 }

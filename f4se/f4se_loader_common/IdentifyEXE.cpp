@@ -102,50 +102,6 @@ const IMAGE_SECTION_HEADER * GetImageSection(const UInt8 * base, const char * na
 	return NULL;
 }
 
-// non-relocated image
-bool HasImportedLibrary(const UInt8 * base, const char * name)
-{
-	auto * dosHeader = (const IMAGE_DOS_HEADER *)base;
-	auto * ntHeader = (const IMAGE_NT_HEADERS *)(base + dosHeader->e_lfanew);
-	auto * importDir = (const IMAGE_DATA_DIRECTORY *)&ntHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
-
-	if(!importDir->Size || !importDir->VirtualAddress) return false;
-
-	// resolve RVA -> file offset
-	const auto * sectionHeader = IMAGE_FIRST_SECTION(ntHeader);
-
-	auto LookupRVA = [ntHeader, sectionHeader, base](UInt32 rva) -> const UInt8 *
-	{
-		for(UInt32 i = 0; i < ntHeader->FileHeader.NumberOfSections; i++)
-		{
-			const auto * section = &sectionHeader[i];
-
-			if(	(rva >= section->VirtualAddress) &&
-				(rva < section->VirtualAddress + section->SizeOfRawData))
-			{
-				return base + rva - section->VirtualAddress + section->PointerToRawData;
-			}
-		}
-
-		return nullptr;
-	};
-
-	if(const auto * importTable = (const IMAGE_IMPORT_DESCRIPTOR *)LookupRVA(importDir->VirtualAddress))
-	{
-		for(; importTable->Characteristics; ++importTable)
-		{
-			auto * dllName = (const char *)LookupRVA(importTable->Name);
-
-			if(dllName && !_stricmp(dllName, name))
-			{
-				return true;
-			}
-		}
-	}
-
-	return false;
-}
-
 // steam EXE will have the .bind section
 bool IsSteamImage(const UInt8 * base)
 {
@@ -155,24 +111,6 @@ bool IsSteamImage(const UInt8 * base)
 bool IsUPXImage(const UInt8 * base)
 {
 	return GetImageSection(base, "UPX0") != NULL;
-}
-
-static bool IsWinStoreImage(const UInt8 * base)
-{
-	// haven't seen this either, but if it imports this then it's a unique build
-	return HasImportedLibrary(base, "api-ms-win-core-psm-appnotify-l1-1-0.dll");
-}
-
-static bool IsGOGImage(const UInt8 * base)
-{
-	// haven't seen it but they may have a unique build for achievements
-	return HasImportedLibrary(base, "Galaxy64.dll");
-}
-
-static bool IsEpicImage(const UInt8 * base)
-{
-	// haven't seen it but let's assume they have a unique build for achievements
-	return HasImportedLibrary(base, "eossdk-win64-shipping.dll");
 }
 
 bool ScanEXE(const char * path, ProcHookInfo * hookInfo)
@@ -194,25 +132,16 @@ bool ScanEXE(const char * path, ProcHookInfo * hookInfo)
 		if(fileBase)
 		{
 			// scan for packing type
-			if(IsUPXImage(fileBase))
+			bool	isSteam = IsSteamImage(fileBase);
+			bool	isUPX = IsUPXImage(fileBase);
+
+			if(isUPX)
 			{
 				hookInfo->procType = kProcType_Packed;
 			}
-			else if(IsSteamImage(fileBase))
+			else if(isSteam)
 			{
 				hookInfo->procType = kProcType_Steam;
-			}
-			else if(IsWinStoreImage(fileBase))
-			{
-				hookInfo->procType = kProcType_WinStore;
-			}
-			else if(IsGOGImage(fileBase))
-			{
-				hookInfo->procType = kProcType_GOG;
-			}
-			else if(IsEpicImage(fileBase))
-			{
-				hookInfo->procType = kProcType_Epic;
 			}
 			else
 			{
@@ -255,15 +184,9 @@ bool IdentifyEXE(const char * procName, bool isEditor, std::string * dllSuffix, 
 	_MESSAGE("version = %016I64X", version);
 	_MESSAGE("product name = %s", productName.c_str());
 
-	if(productName == "F4SE")
+	if(productName == "F4SEVR")
 	{
-		_MESSAGE("found an F4SE component");
-		return false;
-	}
-
-	if(productName == "Fallout 4 Launcher")
-	{
-		PrintLoaderError("You have instructed f4se_loader to run the vanilla Fallout 4 launcher, which cannot work. Most likely you have renamed files incorrectly.");
+		_MESSAGE("found an F4SEVR component");
 		return false;
 	}
 
@@ -276,31 +199,16 @@ bool IdentifyEXE(const char * procName, bool isEditor, std::string * dllSuffix, 
 
 	switch(hookInfo->procType)
 	{
-	case kProcType_Steam:		_MESSAGE("steam exe"); break;
-	case kProcType_Normal:		_MESSAGE("normal exe"); break;
-	case kProcType_Packed:		_MESSAGE("packed exe"); break;
-	case kProcType_WinStore:	_MESSAGE("winstore exe"); break;
-	case kProcType_GOG:			_MESSAGE("gog exe"); break;
-	case kProcType_Epic:		_MESSAGE("epic exe"); break;
+	case kProcType_Steam:	_MESSAGE("steam exe"); break;
+	case kProcType_Normal:	_MESSAGE("normal exe"); break;
+	case kProcType_Packed:	_MESSAGE("packed exe"); break;
 	case kProcType_Unknown:
-	default:					_MESSAGE("unknown exe type"); break;
-	}
-
-	if(hookInfo->procType == kProcType_WinStore)
-	{
-		PrintLoaderError("The Windows Store (gamepass) version of Fallout 4 is not supported.");
-		return false;
-	}
-
-	if(hookInfo->procType == kProcType_Epic)
-	{
-		PrintLoaderError("The Epic Store version of Fallout 4 is not supported.");
-		return false;
+	default:				_MESSAGE("unknown exe type"); break;
 	}
 
 	bool result = false;
 
-	const UInt64 kCurVersion = 0x0001000A03D80000;	// 1.10.984.0
+	const UInt64 kCurVersion = 0x0001000200480000;	// 1.2.72.0
 
 	// convert version resource to internal version format
 	UInt32 versionInternal = MAKE_EXE_VERSION(version >> 48, version >> 32, version >> 16);
@@ -310,16 +218,16 @@ bool IdentifyEXE(const char * procName, bool isEditor, std::string * dllSuffix, 
 #if F4SE_TARGETING_BETA_VERSION
 		if(versionInternal == CURRENT_RELEASE_RUNTIME)
 			PrintLoaderError(
-				"You are using the version of F4SE intended for the Steam beta branch (%d.%d.%d).\n"
+				"You are using the version of F4SEVR intended for the Steam beta branch (%d.%d.%d).\n"
 				"Download and install the non-beta branch version (%s) from http://f4se.silverlock.org/.",
 				F4SE_VERSION_INTEGER, F4SE_VERSION_INTEGER_MINOR, F4SE_VERSION_INTEGER_BETA, CURRENT_RELEASE_F4SE_STR);
 		else
 			PrintLoaderError(
-				"You are using Fallout version %d.%d.%d, which is out of date and incompatible with this version of F4SE. Update to the latest beta version.",
+				"You are using Fallout version %d.%d.%d, which is out of date and incompatible with this version of F4SEVR. Update to the latest beta version.",
 				GET_EXE_VERSION_MAJOR(versionInternal), GET_EXE_VERSION_MINOR(versionInternal), GET_EXE_VERSION_BUILD(versionInternal));
 #else
 		PrintLoaderError(
-			"You are using Fallout version %d.%d.%d, which is out of date and incompatible with this version of F4SE. Update to the latest version.",
+			"You are using Fallout version %d.%d.%d, which is out of date and incompatible with this version of F4SEVR. Update to the latest version.",
 			GET_EXE_VERSION_MAJOR(versionInternal), GET_EXE_VERSION_MINOR(versionInternal), GET_EXE_VERSION_BUILD(versionInternal));
 #endif
 	}
@@ -330,7 +238,7 @@ bool IdentifyEXE(const char * procName, bool isEditor, std::string * dllSuffix, 
 			"If this version just came out, please be patient while we update our code.\n"
 			"In the meantime, please check http://f4se.silverlock.org for updates.\n"
 			"Runtime: %d.%d.%d\n"
-			"F4SE: %d.%d.%d",
+			"F4SEVR: %d.%d.%d",
 			GET_EXE_VERSION_MAJOR(versionInternal), GET_EXE_VERSION_MINOR(versionInternal), GET_EXE_VERSION_BUILD(versionInternal),
 			F4SE_VERSION_INTEGER, F4SE_VERSION_INTEGER_MINOR, F4SE_VERSION_INTEGER_BETA);
 	}
@@ -353,24 +261,14 @@ bool IdentifyEXE(const char * procName, bool isEditor, std::string * dllSuffix, 
 	}
 	else
 	{
-		char name[128];
-		sprintf_s(name, _countof(name), "%d_%d_%d",
-			int((kCurVersion >> 48) & 0xFFFF),
-			int((kCurVersion >> 32) & 0xFFFF),
-			int((kCurVersion >> 16) & 0xFFFF));
-		*dllSuffix = name;
-
 		switch(hookInfo->procType)
 		{
 		case kProcType_Steam:
 		case kProcType_Normal:
-			result = true;
-			break;
-
-		case kProcType_GOG:
-			*dllSuffix += "_gog";
+			*dllSuffix = "1_2_72";
 
 			result = true;
+
 			break;
 
 		case kProcType_Packed:

@@ -13,17 +13,17 @@
 class BGSSaveLoadGame;
 
 typedef void (* _SaveGame)(BGSSaveLoadGame * saveLoadMgr, const char * name, UInt8 unk1);
-RelocAddr <_SaveGame> SaveGame(0x00B6CA20);
+RelocAddr <_SaveGame> SaveGame(0x00D27D80);
 _SaveGame SaveGame_Original = nullptr;
 
 typedef bool (* _LoadGame)(BGSSaveLoadGame * saveLoadMgr, const char * name, UInt8 unk1, void * unk2);
-RelocAddr <_LoadGame> LoadGame(0x00B6D0D0);
+RelocAddr <_LoadGame> LoadGame(0x00D28280);
 _LoadGame LoadGame_Original = nullptr;
 
-RelocAddr <uintptr_t> NewGame_Enter(0x00FE9640 + 0x421);
+RelocAddr <uintptr_t> NewGame_Enter(0x01321550 + 0x68);
 
 typedef void (* _DeleteSaveGame)(BGSSaveLoadGame * saveLoadMgr, const char * name, UInt32 unk1, UInt8 unk2);
-RelocAddr <_DeleteSaveGame> DeleteSaveGame(0x00B77870);
+RelocAddr <_DeleteSaveGame> DeleteSaveGame(0x00D36630);
 _DeleteSaveGame DeleteSaveGame_Original = nullptr;
 
 void SaveGame_Hook(BGSSaveLoadGame * saveLoadMgr, const char * saveName, UInt8 unk1)
@@ -90,12 +90,13 @@ void Hooks_SaveLoad_Commit()
 			{
 				Xbyak::Label retnLabel;
 
-				mov(ptr [rsp + 0x18], r8b);
+				mov(rax, rsp);
+				mov(ptr[rax+0x18], r8b);
 
 				jmp(ptr [rip + retnLabel]);
 
 				L(retnLabel);
-				dq(SaveGame.GetUIntPtr() + 5);
+				dq(SaveGame.GetUIntPtr() + 7);
 			}
 		};
 
@@ -105,7 +106,7 @@ void Hooks_SaveLoad_Commit()
 
 		SaveGame_Original = (_SaveGame)codeBuf;
 
-		g_branchTrampoline.Write5Branch(SaveGame.GetUIntPtr(), (uintptr_t)SaveGame_Hook);
+		g_branchTrampoline.Write6Branch(SaveGame.GetUIntPtr(), (uintptr_t)SaveGame_Hook);
 	}
 
 	// hook load game

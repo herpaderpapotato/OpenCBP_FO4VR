@@ -314,6 +314,13 @@ public:
 	float	unk2C;		// 2C
 };
 
+// 58
+class ExtraWorkshopData
+{
+public:
+	UInt64	unk18[(0x58 - 0x18) >> 3];
+};
+
 // 20
 class ExtraMaterialSwap : public BSExtraData
 {
@@ -348,7 +355,7 @@ public:
 	UInt32      unk44;			// 44
 
 	MEMBER_FN_PREFIX(ExtraTextDisplayData);
-	DEFINE_MEMBER_FN(GetReferenceName, BSFixedString *, 0x002581E0, TESForm * baseForm);
+	DEFINE_MEMBER_FN(GetReferenceName, BSFixedString *, 0x000C15F0, TESForm * baseForm);
 };
 
 // 20

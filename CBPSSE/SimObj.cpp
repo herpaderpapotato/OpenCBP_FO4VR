@@ -51,11 +51,11 @@ bool SimObj::AddBonesToThings(Actor* actor, std::vector<std::string>& boneNames)
                 auto findBone = things.find(b);
                 if (!bone)
                 {
-                    logger.Info("%s: Failed to find Bone %s for actor %08x\n", __func__, b.c_str(), actor->formID);
+                    //logger.Info("%s: Failed to find Bone %s for actor %08x\n", __func__, b.c_str(), actor->formID);
                 }
                 else if (findBone == things.end())
                 {
-                    //logger.info("Doing Bone %s for actor %08x\n", b, actor->formID);
+                    //logger.Info("Doing Bone %s for actor %08x\n", b, actor->formID);
                     things.insert(std::make_pair(b, Thing(bone, cs, actor)));
                 }
             }
@@ -135,13 +135,30 @@ void SimObj::Update(Actor* actor)
         //concurrency::parallel_for_each(things.begin(), things.end(), [&](auto& thing)
         //    {
         // Might be a better way to do this
+        //logger.Error("------------------------------------\n");
+		//logger.Error("%s: Updating Thing %s for actor %08x\n", __func__, t.first.c_str(), actor->formID);
+        //logger.Error("------------------------------------\n");
         auto actorBoneMapIter = boneIgnores.find(actor->formID);
+        //logger.Error("------------------------------------\n");
+
         if (actorBoneMapIter != boneIgnores.end())
         {
+			//logger.Error("------------------------------------\n");
+			//logger.Error("%s: actorBoneMapIter found\n", __func__);
+            //logger.Error("------------------------------------\n");
             auto & actorBoneMap = actorBoneMapIter->second;
+            //logger.Error("------------------------------------\n");
+			//logger.Error("%s: actorBoneMap found\n", __func__);
+            //logger.Error("------------------------------------\n");
             auto boneDisabledIter = actorBoneMap.find(t.first);
+            //logger.Error("------------------------------------\n");
+			//logger.Error("%s: boneDisabledIter found\n", __func__);
+            //logger.Error("------------------------------------\n");
             if (boneDisabledIter != actorBoneMap.end())
             {
+                //logger.Error("------------------------------------\n");
+				//logger.Error("%s: Bone %s is disabled for actor %08x\n", __func__, t.first.c_str(), actor->formID);
+                //logger.Error("------------------------------------\n");
                 if (true == boneDisabledIter->second)
                 {
                     continue;
@@ -149,9 +166,20 @@ void SimObj::Update(Actor* actor)
             }
         }
 
+        //logger.Error("------------------------------------\n");
+		//logger.Error("Checking if second is enabled\n");
+        //logger.Error("------------------------------------\n");
         if (t.second.isEnabled)
         {
+			//logger.Error("------------------------------------\n");
+			//logger.Error("Second is enabled, updating thing\n");
+
+            //logger.Error("------------------------------------\n");
             t.second.UpdateThing(actor);
+            //logger.Error("------------------------------------\n");
+			//logger.Error("%s: Updated Thing %s for actor %08x\n", __func__, t.first.c_str(), actor->formID);
+
+            //logger.Error("------------------------------------\n");
         }
         //});
     }

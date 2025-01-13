@@ -9,7 +9,6 @@
 #include <cstdio>
 
 #include <typeinfo>
-
 #include <memory>
 #include <vector>
 #include <chrono>
@@ -111,18 +110,18 @@ std::string spaces(int n)
     return s;
 }
 
-bool printStuff(NiAVObject* avObj, int depth)
-{
-    std::string sss = spaces(depth);
-    const char* ss = sss.c_str();
-    //logger.info("%savObj Name = %s, RTTI = %s\n", ss, avObj->m_name, avObj->GetRTTI()->name);
-
-    //NiNode *node = avObj->GetAsNiNode();
-    //if (node) {
-    //	logger.info("%snode %s, RTTI %s\n", ss, node->m_name, node->GetRTTI()->name);
-    //}
-    //return false;
-}
+//bool printStuff(NiAVObject* avObj, int depth)
+//{
+//    std::string sss = spaces(depth);
+//    const char* ss = sss.c_str();
+//    //logger.info("%savObj Name = %s, RTTI = %s\n", ss, avObj->m_name, avObj->GetRTTI()->name);
+//
+//    //NiNode *node = avObj->GetAsNiNode();
+//    //if (node) {
+//    //	//logger.Info("%snode %s, RTTI %s\n", ss, node->m_name, node->GetRTTI()->name);
+//    //}
+//    //return false;
+//}
 
 template<class T>
 inline void safe_delete(T*& in)
@@ -167,7 +166,7 @@ void UpdateActors()
 
     if (cell != curCell)
     {
-        logger.Error("cell change %d\n", cell->formID);
+        //logger.Error("cell change %d\n", cell->formID);
         curCell = cell;
         actors.clear();
         actorEntries.clear();
@@ -218,7 +217,7 @@ void UpdateActors()
     //	BSFixedString cs("UUNP");
     //	auto bodyAV = player->loadedState->node->GetObjectByName(&cs.data);
     //	BSTriShape *body = bodyAV->GetAsBSTriShape();
-    //	logger.info("GetAsBSTriShape returned  %lld\n", body);
+    //	//logger.Info("GetAsBSTriShape returned  %lld\n", body);
     //	auto geometryData = body->geometryData;
     //	//logger.info("Num verts = %d\n", geometryData->m_usVertices);
 
@@ -279,7 +278,7 @@ void UpdateActors()
             if (gender != simObj.GetGender() ||
                 GetActorRaceEID(a.actor) != simObj.GetRaceEID())
             {
-                logger.Info("UpdateActors: Reset sim object\n");
+                //logger.Info("UpdateActors: Reset sim object\n");
                 simObj.Reset();
             }
         }
@@ -314,7 +313,7 @@ void UpdateActors()
                     // Detect changes in actor+slots combination
                     if (key != simObjKey)
                     {
-                        logger.Error("UpdateActors: Key change detected for actor %08x.\n", a.actor->formID);
+                        //logger.Error("UpdateActors: Key change detected for actor %08x.\n", a.actor->formID);
                         simObj.SetActorKey(key);
                         auto& composedConfig = BuildConfigForActor(a.actor, key);
                         simObj.UpdateConfigs(composedConfig);
@@ -336,7 +335,7 @@ void UpdateActors()
     //LOG_ERR("Collider Check Call Count: %d - Update Time = %lld ns", callCount, elapsedMicroseconds.QuadPart);
     if (debugtimelog_framecount % 1000 == 0)
     {
-        logger.Error("Average Update Time in 1000 frame = %lld ns\n", totaltime.QuadPart / debugtimelog_framecount);
+        //logger.Error("Average Update Time in 1000 frame = %lld ns\n", totaltime.QuadPart / debugtimelog_framecount);
         totaltime.QuadPart = 0;
         debugtimelog_framecount = 0;
         //totalcallcount = 0;

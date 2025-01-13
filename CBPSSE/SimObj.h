@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#define _SILENCE_AMP_DEPRECATION_WARNINGS 1
 #include "amp.h"
 #include <ppl.h>
 

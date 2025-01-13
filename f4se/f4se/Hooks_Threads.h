@@ -9,5 +9,4 @@ namespace TaskInterface
 {
 	void AddTask(ITaskDelegate * task);
 	void AddUITask(ITaskDelegate * task);
-	void AddTaskPermanent(ITaskDelegate* task);
 }

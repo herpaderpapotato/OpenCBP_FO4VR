@@ -1,7 +1,5 @@
 #pragma once
 
-#include <functional>
-
 #include "f4se/GameTypes.h"
 #include "f4se/NiTypes.h"
 
@@ -87,7 +85,7 @@ public:
 	virtual bool				Unk_27() { return false; };
 
 	MEMBER_FN_PREFIX(NiObject);
-	DEFINE_MEMBER_FN(Internal_IsEqual, bool, 0x0159FC00, NiObject * object);
+	DEFINE_MEMBER_FN(Internal_IsEqual, bool, 0x01C13EA0, NiObject * object);
 };
 
 // 28
@@ -110,7 +108,7 @@ public:
 	bool HasExtraData(const BSFixedString & name) { return GetExtraData(name) != nullptr; }
 
 	MEMBER_FN_PREFIX(NiObjectNET);
-	DEFINE_MEMBER_FN(Internal_AddExtraData, bool, 0x015A2270, NiExtraData * extraData);
+	DEFINE_MEMBER_FN(Internal_AddExtraData, bool, 0x01C16CD0, NiExtraData * extraData);
 };
 
 // 120
@@ -139,12 +137,17 @@ public:
 	virtual void SetMaterialNeedsUpdate(); // empty?
 	virtual void SetDefaultMaterialNeedsUpdateFlag(); // empty?
 	virtual void SetAppCulled(bool set);
-	virtual NiAVObject * GetObjectByName(const BSFixedString * nodeName);
+//	virtual NiAVObject * GetObjectByName(const BSFixedString * nodeName);
+	virtual void unkwrongfunc0();
 	virtual void SetSelectiveUpdateFlags(bool * unk1, bool unk2, bool * unk3);
-	virtual void UpdateDownwardPass();
-	virtual void UpdateSelectedDownwardPass();
+	virtual void UpdateDownwardPass(NiUpdateData* ud, std::uint32_t flags);
+//	virtual void UpdateSelectedDownwardPass();
+	virtual NiAVObject * GetObjectByName(const BSFixedString * nodeName);
 	virtual void UpdateRigidDownwardPass();
 	virtual void UpdateWorldBound();
+	virtual void unka0();
+	virtual void unka8();
+	virtual void unkb0();
 	virtual void UpdateWorldData(NiUpdateData * ctx);
 	virtual void UpdateTransformAndBounds();
 	virtual void UpdateTransforms();
@@ -199,10 +202,28 @@ public:
 	UInt32			unk11C;				// 11C
 
 	MEMBER_FN_PREFIX(NiAVObject);
-	DEFINE_MEMBER_FN(GetAVObjectByName, NiAVObject*, 0x01685DD0, BSFixedString * name, bool unk1, bool unk2);
-	DEFINE_MEMBER_FN(SetScenegraphChange, void, 0x015AE0B0);
+	DEFINE_MEMBER_FN(GetAVObjectByName, NiAVObject*, 0x01D137A0, BSFixedString * name, bool unk1, bool unk2);
+	DEFINE_MEMBER_FN(SetScenegraphChange, void, 0x01C23E10);
 
 	// Return true in the functor to halt traversal
-	bool Visit(const std::function<bool(NiAVObject*)>& functor);
+	template<typename T>
+	bool Visit(T & functor)
+	{
+		if (functor(this))
+			return true;
+
+		NiPointer<NiNode> node(GetAsNiNode());
+		if(node) {
+			for(UInt32 i = 0; i < node->m_children.m_emptyRunStart; i++) {
+				NiPointer<NiAVObject> object(node->m_children.m_data[i]);
+				if(object) {
+					if (object->Visit(functor))
+						return true;
+				}
+			}
+		}
+
+		return false;
+	}
 };
 STATIC_ASSERT(sizeof(NiAVObject) == 0x120);

@@ -3,12 +3,11 @@
 
 #include "f4se/GameReferences.h"
 
-RelocAddr <_SendCustomEvent> SendCustomEvent_Internal(0x010AF220);
-RelocAddr <_CallFunctionNoWait> CallFunctionNoWait_Internal(0x010AC900);
-RelocAddr <_CallGlobalFunctionNoWait> CallGlobalFunctionNoWait_Internal(0x01105FB0);
+RelocAddr <_SendCustomEvent> SendCustomEvent_Internal(0x0145E5B0);
+RelocAddr <_CallFunctionNoWait> CallFunctionNoWait_Internal(0x0145BB20);
+RelocAddr <_CallGlobalFunctionNoWait> CallGlobalFunctionNoWait_Internal(0x014D6BD0);
 
 RegistrationMapHolder<UInt32>									g_inputKeyEventRegs;
-RegistrationMapHolder<UInt32>									g_inputGamepadButtonEventRegs;
 RegistrationMapHolder<BSFixedString>							g_inputControlEventRegs;
 RegistrationMapHolder<BSFixedString, ExternalEventParameters>	g_externalEventRegs;
 RegistrationSetHolder<NullParameters>							g_cameraEventRegs;

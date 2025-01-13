@@ -27,14 +27,14 @@ BOOL WINAPI DllMain(HANDLE procHandle, DWORD reason, LPVOID reserved)
 
 static void OnAttach(void)
 {
-	gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Fallout4\\F4SE\\f4se_steam_loader.log");
+	gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Fallout4VR\\F4SE\\f4sevr_steam_loader.log");
 	gLog.SetPrintLevel(IDebugLog::kLevel_Error);
 	gLog.SetLogLevel(IDebugLog::kLevel_DebugMessage);
 
 	FILETIME	now;
 	GetSystemTimeAsFileTime(&now);
 
-	_MESSAGE("f4se loader %08X (steam) %08X%08X %s", PACKED_F4SE_VERSION, now.dwHighDateTime, now.dwLowDateTime, GetOSInfoStr().c_str());
+	_MESSAGE("f4se vr loader %08X (steam) %08X%08X %s", PACKED_F4SE_VERSION, now.dwHighDateTime, now.dwLowDateTime, GetOSInfoStr().c_str());
 	_MESSAGE("loader base addr = %016I64X", g_dllHandle);
 	_MESSAGE("exe base addr = %016I64X", GetModuleHandle(NULL));
 
@@ -98,7 +98,7 @@ static void HookMain(void * retAddr)
 		return;
 	}
 
-	const char	* dllPrefix = (isEditor == false) ? "\\f4se_" : "\\f4se_editor_";
+	const char	* dllPrefix = (isEditor == false) ? "\\f4sevr_" : "\\f4sevr_editor_";
 
 	g_dllPath = GetRuntimeDirectory() + dllPrefix + dllSuffix + ".dll";
 	_MESSAGE("dll = %s", g_dllPath.c_str());

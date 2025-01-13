@@ -1,144 +1,10 @@
 #include "PluginManager.h"
 #include "common/IDirectoryIterator.h"
-#include "common/IFileStream.h"
 #include "GameAPI.h"
 #include "f4se_common/Utilities.h"
 #include "f4se_common/f4se_version.h"
-#include "f4se_common/BranchTrampoline.h"
-#include "Hooks_Scaleform.h"
-#include "Hooks_Papyrus.h"
-#include "f4se/Serialization.h"
-#include "Hooks_Threads.h"
-#include "f4se/PapyrusDelayFunctors.h"
-#include "f4se/PapyrusObjects.h"
-
-#include <cassert>
-#include <cstdint>
-#include <functional>
-#include <mutex>
-
-namespace
-{
-	class ScopeExit
-	{
-	public:
-		ScopeExit(std::function<void()> fn) :
-			m_fn(std::move(fn))
-		{
-			assert(m_fn);
-		}
-
-		~ScopeExit()
-		{
-			if (m_fn)
-			{
-				m_fn();
-			}
-		}
-
-	private:
-		std::function<void()> m_fn;
-
-		ScopeExit(const ScopeExit&);
-		ScopeExit(ScopeExit&&);
-
-		ScopeExit& operator=(const ScopeExit&);
-		ScopeExit& operator=(ScopeExit&&);
-	};
-
-	std::string CheckModNotFound(const char* a_plugin)
-	{
-		assert(a_plugin != nullptr);
-
-		const auto file = LoadLibraryExA(
-			a_plugin,
-			NULL,
-			LOAD_LIBRARY_AS_DATAFILE);
-		if (file == NULL)
-		{
-			return "failed to load resource with error code " + std::to_string(GetLastError());
-		}
-		ScopeExit _file([&]() { FreeLibrary(file); });
-
-		const auto base = reinterpret_cast<const char*>(
-			reinterpret_cast<std::uintptr_t>(file) & 
-			~(static_cast<std::uintptr_t>(0xFFFF)));	// https://devblogs.microsoft.com/oldnewthing/20051006-09/?p=33883
-		const auto dosHeader = reinterpret_cast<const IMAGE_DOS_HEADER*>(base);
-		const auto ntHeader = reinterpret_cast<const IMAGE_NT_HEADERS64*>(base + dosHeader->e_lfanew);
-		const auto sections = IMAGE_FIRST_SECTION(ntHeader);
-		const auto adjustRVA = [&](std::size_t rva) -> DWORD
-		{
-			for (WORD i = 0; i < ntHeader->FileHeader.NumberOfSections; ++i)
-			{
-				const auto section = sections[i];
-				if (section.VirtualAddress <= rva && rva < section.VirtualAddress + section.Misc.VirtualSize)
-				{
-					return rva - section.VirtualAddress + section.PointerToRawData;
-				}
-			}
-			return 0;
-		};
-
-		const auto importDirectory = ntHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
-		if (importDirectory.Size == 0)
-		{
-			return "no import entry to enumerate";
-		}
-
-		const auto imports = reinterpret_cast<const IMAGE_IMPORT_DESCRIPTOR*>(base + adjustRVA(importDirectory.VirtualAddress));
-		for (auto iter = imports; iter->Characteristics != 0; ++iter)
-		{
-			const auto name = reinterpret_cast<const char*>(base + adjustRVA(iter->Name));
-			if (name && name[0] != '\0')
-			{
-				const auto handle = LoadLibraryA(name);
-				if (handle == NULL)
-				{
-					return std::string("failed to load ") + name;
-				}
-				else
-				{
-					FreeLibrary(handle);
-				}
-			}
-		}
-
-		return "";
-	}
-
-	void* AllocateFromPool(PluginAllocator& alloc, const char* name, PluginHandle plugin, size_t size)
-	{
-		assert(name != nullptr);
-
-		const auto mem = alloc.Allocate(size);
-		if (mem) {
-			static std::mutex lock;
-			const std::lock_guard<decltype(lock)> l(lock);	// global log isn't thread-safe
-			_DMESSAGE("plugin %u allocated %u bytes from %s pool", plugin, size, name);
-		}
-
-		return mem;
-	}
-
-	void* AllocateFromBranchPool(PluginHandle plugin, size_t size)
-	{
-		return AllocateFromPool(g_branchPluginAllocator, "branch", plugin, size);
-	}
-
-	void* AllocateFromLocalPool(PluginHandle plugin, size_t size)
-	{
-		return AllocateFromPool(g_localPluginAllocator, "local", plugin, size);
-	}
-}
-
-static const char *	GetSaveFolderName(void)
-{
-	return SAVE_FOLDER_NAME;
-}
 
 PluginManager	g_pluginManager;
-PluginAllocator	g_branchPluginAllocator;
-PluginAllocator	g_localPluginAllocator;
 
 PluginManager::LoadedPlugin *	PluginManager::s_currentLoadingPlugin = NULL;
 PluginHandle					PluginManager::s_currentPluginHandle = 0;
@@ -147,15 +13,19 @@ static const F4SEInterface g_F4SEInterface =
 {
 	PACKED_F4SE_VERSION,
 
+#ifdef RUNTIME
 	RUNTIME_VERSION,
 	0,
 	0,
+#else
+	0,
+	0,
+	1,
+#endif
 
 	PluginManager::QueryInterface,
 	PluginManager::GetPluginHandle,
-	PluginManager::GetReleaseIndex,
-	PluginManager::GetPluginInfo,
-	GetSaveFolderName
+	PluginManager::GetReleaseIndex
 };
 
 static const F4SEMessagingInterface g_F4SEMessagingInterface =
@@ -165,11 +35,15 @@ static const F4SEMessagingInterface g_F4SEMessagingInterface =
 	PluginManager::Dispatch_Message,
 };
 
+#include "Hooks_Scaleform.h"
+
 static const F4SEScaleformInterface g_F4SEScaleformInterface =
 {
 	F4SEScaleformInterface::kInterfaceVersion,
 	RegisterScaleformPlugin
 };
+
+#include "Hooks_Papyrus.h"
 
 static const F4SEPapyrusInterface g_F4SEPapyrusInterface =
 {
@@ -177,6 +51,8 @@ static const F4SEPapyrusInterface g_F4SEPapyrusInterface =
 	RegisterPapyrusPlugin,
 	GetExternalEventRegistrations
 };
+
+#include "f4se/Serialization.h"
 
 static const F4SESerializationInterface	g_F4SESerializationInterface =
 {
@@ -199,14 +75,18 @@ static const F4SESerializationInterface	g_F4SESerializationInterface =
 	Serialization::ResolveFormId
 };
 
+#include "Hooks_Threads.h"
+
 static const F4SETaskInterface	g_F4SETaskInterface =
 {
 	F4SETaskInterface::kInterfaceVersion,
 
 	TaskInterface::AddTask,
-	TaskInterface::AddUITask,
-	TaskInterface::AddTaskPermanent
+	TaskInterface::AddUITask
 };
+
+#include "f4se/PapyrusDelayFunctors.h"
+#include "f4se/PapyrusObjects.h"
 
 static const F4SEObjectInterface g_F4SEObjectInterface =
 {
@@ -214,13 +94,6 @@ static const F4SEObjectInterface g_F4SEObjectInterface =
 	F4SEDelayFunctorManagerInstance,
 	F4SEObjectRegistryInstance,
 	F4SEObjectStorageInstance
-};
-
-static const F4SETrampolineInterface g_F4SETrampolineInterface =
-{
-	F4SETrampolineInterface::kInterfaceVersion,
-	AllocateFromBranchPool,
-	AllocateFromLocalPool
 };
 
 PluginManager::PluginManager()
@@ -233,13 +106,7 @@ PluginManager::~PluginManager()
 	DeInit();
 }
 
-PluginManager::LoadedPlugin::LoadedPlugin()
-{
-	memset(&info, 0, sizeof(info));
-	memset(&version, 0, sizeof(version));
-}
-
-void PluginManager::Init(void)
+bool PluginManager::Init(void)
 {
 	bool	result = false;
 
@@ -247,12 +114,9 @@ void PluginManager::Init(void)
 	{
 		_MESSAGE("plugin directory = %s", m_pluginDirectory.c_str());
 
-		// avoid realloc
-		m_plugins.reserve(5);
-
 		__try
 		{
-			ScanPlugins();
+			InstallPlugins();
 
 			result = true;
 		}
@@ -262,113 +126,8 @@ void PluginManager::Init(void)
 			_ERROR("exception occurred while loading plugins");
 		}
 	}
-}
 
-void PluginManager::InstallPlugins(UInt32 phase)
-{
-	for(size_t i = 0; i < m_plugins.size(); i++)
-	{
-		auto & plugin = m_plugins[i];
-
-		// skip plugins that don't care about this phase
-		if(phase == kPhase_Preload)
-		{
-			if(!plugin.hasPreload)
-				continue;
-		}
-		else
-		{
-			if(!plugin.hasLoad)
-				continue;
-		}
-
-		_MESSAGE("%sloading plugin \"%s\"", (phase == kPhase_Preload) ? "pre" : "", plugin.version.name);
-
-		s_currentLoadingPlugin = &plugin;
-		s_currentPluginHandle = plugin.internalHandle;
-
-		std::string pluginPath = m_pluginDirectory + plugin.dllName;
-
-		if(!plugin.handle)
-		{
-			plugin.handle = (HMODULE)LoadLibrary(pluginPath.c_str());
-			if(!plugin.handle)
-				LogPluginLoadError(plugin, "couldn't load plugin", GetLastError());
-		}
-
-		bool	success = false;
-
-		if(plugin.handle)
-		{
-			plugin.load[phase] = (_F4SEPlugin_Load)GetProcAddress(plugin.handle, (phase == kPhase_Preload) ? "F4SEPlugin_Preload" : "F4SEPlugin_Load");
-			if(plugin.load)
-			{
-				const char * loadStatus = nullptr;
-
-				loadStatus = SafeCallLoadPlugin(&plugin, &g_F4SEInterface, phase);
-
-				if(!loadStatus)
-				{
-					success = true;
-				}
-				else
-				{
-					LogPluginLoadError(plugin, loadStatus);
-				}
-			}
-			else
-			{
-				LogPluginLoadError(plugin, "does not appear to be an F4SE plugin");
-			}
-		}
-
-		if(!success)
-		{
-			// failed, unload the library
-			if(plugin.handle) FreeLibrary(plugin.handle);
-
-			// and remove from plugins list
-			m_plugins.erase(m_plugins.begin() + i);
-
-			// fix iterator
-			i--;
-		}
-
-	}
-
-	s_currentLoadingPlugin = nullptr;
-	s_currentPluginHandle = 0;
-}
-
-void PluginManager::LoadComplete()
-{
-	for(size_t i = 0; i < m_plugins.size(); i++)
-	{
-		auto & plugin = m_plugins[i];
-
-		_MESSAGE("plugin %s (%08X %s %08X) %s (handle %d)",
-			plugin.dllName.c_str(),
-			plugin.version.dataVersion,
-			plugin.version.name,
-			plugin.version.pluginVersion,
-			"loaded correctly",
-			plugin.internalHandle);
-	}
-
-	ReportPluginErrors();
-
-	// make fake PluginInfo structs after m_plugins is locked
-	for(auto & plugin : m_plugins)
-	{
-		plugin.info.infoVersion = PluginInfo::kInfoVersion;
-		plugin.info.name = plugin.version.name;
-		plugin.info.version = plugin.version.pluginVersion;
-	}
-
-	// alert any listeners that plugin load has finished
-	Dispatch_Message(0, F4SEMessagingInterface::kMessage_PostLoad, NULL, 0, NULL);
-	// second post-load dispatch
-	Dispatch_Message(0, F4SEMessagingInterface::kMessage_PostPostLoad, NULL, 0, NULL);
+	return result;
 }
 
 void PluginManager::DeInit(void)
@@ -434,9 +193,6 @@ void * PluginManager::QueryInterface(UInt32 id)
 	case kInterface_Object:
 		result = (void *)&g_F4SEObjectInterface;
 		break;
-	case kInterface_Trampoline:
-		result = (void *)&g_F4SETrampolineInterface;
-		break;
 	default:
 		_WARNING("unknown QueryInterface %08X", id);
 		break;
@@ -460,11 +216,6 @@ UInt32 PluginManager::GetReleaseIndex( void )
 	return F4SE_VERSION_RELEASEIDX;
 }
 
-const PluginInfo* PluginManager::GetPluginInfo(const char* name)
-{
-	return g_pluginManager.GetInfoByName(name);
-}
-
 bool PluginManager::FindPluginDirectory(void)
 {
 	bool	result = false;
@@ -481,103 +232,121 @@ bool PluginManager::FindPluginDirectory(void)
 	return result;
 }
 
-void PluginManager::ScanPlugins(void)
+void PluginManager::InstallPlugins(void)
 {
-	_MESSAGE("scanning plugin directory %s", m_pluginDirectory.c_str());
-
-	UInt32 handleIdx = 1;	// start at 1, 0 is reserved for internal use
+	// avoid realloc
+	m_plugins.reserve(5);
 
 	for(IDirectoryIterator iter(m_pluginDirectory.c_str(), "*.dll"); !iter.Done(); iter.Next())
 	{
 		std::string	pluginPath = iter.GetFullPath();
 
+		_MESSAGE("checking plugin %s", pluginPath.c_str());
+
 		LoadedPlugin	plugin;
-		plugin.dllName = iter.Get()->cFileName;
+		memset(&plugin, 0, sizeof(plugin));
 
-		_MESSAGE("checking plugin %s", plugin.dllName.c_str());
+		s_currentLoadingPlugin = &plugin;
+		s_currentPluginHandle = m_plugins.size() + 1;	// +1 because 0 is reserved for internal use
 
-		HMODULE resourceHandle = (HMODULE)LoadLibraryEx(pluginPath.c_str(), nullptr, LOAD_LIBRARY_AS_IMAGE_RESOURCE);
-		if(resourceHandle)
+		plugin.handle = (HMODULE)LoadLibrary(pluginPath.c_str());
+		if(plugin.handle)
 		{
-			if(Is64BitDLL(resourceHandle))
-			{
-				auto * version = (const F4SEPluginVersionData *)GetResourceLibraryProcAddress(resourceHandle, "F4SEPlugin_Version");
-				if(version)
-				{
-					plugin.version = *version;
-					Sanitize(&plugin.version);
+			bool		success = false;
 
-					auto * loadStatus = CheckPluginCompatibility(plugin.version);
+			plugin.query = (_F4SEPlugin_Query)GetProcAddress(plugin.handle, "F4SEPlugin_Query");
+			plugin.load = (_F4SEPlugin_Load)GetProcAddress(plugin.handle, "F4SEPlugin_Load");
+
+			if(plugin.query && plugin.load)
+			{
+				const char	* loadStatus = NULL;
+
+				loadStatus = SafeCallQueryPlugin(&plugin, &g_F4SEInterface);
+
+				if(!loadStatus)
+				{
+					loadStatus = CheckPluginCompatibility(&plugin);
+
 					if(!loadStatus)
 					{
-						// compatible, add to list
+						loadStatus = SafeCallLoadPlugin(&plugin, &g_F4SEInterface);
 
-						plugin.internalHandle = handleIdx;
-						handleIdx++;
-
-						plugin.hasLoad = GetResourceLibraryProcAddress(resourceHandle, "F4SEPlugin_Load") != nullptr;
-						plugin.hasPreload = GetResourceLibraryProcAddress(resourceHandle, "F4SEPlugin_Preload") != nullptr;
-
-						m_plugins.push_back(plugin);
-					}
-					else
-					{
-						LogPluginLoadError(plugin, loadStatus);
+						if(!loadStatus)
+						{
+							loadStatus = "loaded correctly";
+							success = true;
+						}
 					}
 				}
 				else
 				{
-					LogPluginLoadError(plugin, "no version data", 0, false);
+					loadStatus = "reported as incompatible during query";
 				}
+
+				ASSERT(loadStatus);
+
+				_MESSAGE("plugin %s (%08X %s %08X) %s",
+					pluginPath.c_str(),
+					plugin.info.infoVersion,
+					plugin.info.name ? plugin.info.name : "<NULL>",
+					plugin.info.version,
+					loadStatus);
 			}
 			else
 			{
-				LogPluginLoadError(plugin, "32-bit plugins can never work");
+				_MESSAGE("plugin %s does not appear to be an F4SE plugin", pluginPath.c_str());
 			}
 
-			FreeLibrary(resourceHandle);
+			if(success)
+			{
+				// succeeded, add it to the list
+				m_plugins.push_back(plugin);
+			}
+			else
+			{
+				// failed, unload the library
+				FreeLibrary(plugin.handle);
+			}
 		}
 		else
 		{
-			LogPluginLoadError(plugin, "couldn't load plugin", GetLastError());
+			_ERROR("couldn't load plugin %s (Error %d)", pluginPath.c_str(), GetLastError());
 		}
 	}
+
+	s_currentLoadingPlugin = NULL;
+	s_currentPluginHandle = 0;
+
+	// alert any listeners that plugin load has finished
+	Dispatch_Message(0, F4SEMessagingInterface::kMessage_PostLoad, NULL, 0, NULL);
+	// second post-load dispatch
+	Dispatch_Message(0, F4SEMessagingInterface::kMessage_PostPostLoad, NULL, 0, NULL);
 }
 
-const char * PluginManager::CheckAddressLibrary(void)
-{
-	static bool s_checked = false;
-	static const char * s_status = nullptr;
-
-	if(s_checked)
-	{
-		return s_status;
-	}
-
-	char fileName[256];
-	_snprintf_s(fileName, sizeof(fileName), "Data\\F4SE\\Plugins\\version-%d-%d-%d-%d.bin",
-		GET_EXE_VERSION_MAJOR(RUNTIME_VERSION),
-		GET_EXE_VERSION_MINOR(RUNTIME_VERSION),
-		GET_EXE_VERSION_BUILD(RUNTIME_VERSION),
-		0);
-
-	IFileStream versionLib;
-	if(!versionLib.Open(fileName))
-	{
-		m_oldAddressLibrary = true;
-		s_status = "disabled, address library needs to be updated";
-	}
-
-	s_checked = true;
-
-	return s_status;
-}
-
-const char * PluginManager::SafeCallLoadPlugin(LoadedPlugin * plugin, const F4SEInterface * f4se, UInt32 phase)
+// SEH-wrapped calls to plugin API functions to avoid bugs from bringing down the core
+const char * PluginManager::SafeCallQueryPlugin(LoadedPlugin * plugin, const F4SEInterface * f4se)
 {
 	__try
 	{
-		if(!plugin->load[phase](f4se))
+		if(!plugin->query(f4se, &plugin->info))
+		{
+			return "reported as incompatible during query";
+		}
+	}
+	__except(EXCEPTION_EXECUTE_HANDLER)
+	{
+		// something very bad happened
+		return "disabled, fatal error occurred while querying plugin";
+	}
+
+	return NULL;
+}
+
+const char * PluginManager::SafeCallLoadPlugin(LoadedPlugin * plugin, const F4SEInterface * f4se)
+{
+	__try
+	{
+		if(!plugin->load(f4se))
 		{
 			return "reported as incompatible during load";
 		}
@@ -591,16 +360,10 @@ const char * PluginManager::SafeCallLoadPlugin(LoadedPlugin * plugin, const F4SE
 	return NULL;
 }
 
-void PluginManager::Sanitize(F4SEPluginVersionData * version)
-{
-	version->name[sizeof(version->name) - 1] = 0;
-	version->author[sizeof(version->author) - 1] = 0;
-}
-
 enum
 {
-	kCompat_BlockFromRuntime =			1 << 0,
-	kCompat_BlockFromEditor =			1 << 1,
+	kCompat_BlockFromRuntime =	1 << 0,
+	kCompat_BlockFromEditor =	1 << 1,
 };
 
 struct MinVersionEntry
@@ -616,17 +379,13 @@ static const MinVersionEntry	kMinVersionList[] =
 	{	NULL, 0, NULL }
 };
 
-const char * PluginManager::CheckPluginCompatibility(const F4SEPluginVersionData & version)
+// see if we have a plugin that we know causes problems
+const char * PluginManager::CheckPluginCompatibility(LoadedPlugin * plugin)
 {
 	__try
 	{
-		// basic validity
-		if(!version.dataVersion)
-		{
-			return "disabled, bad version data";
-		}
-
-		if(!version.name[0])
+		// stupid plugin check
+		if(!plugin->info.name)
 		{
 			return "disabled, no name specified";
 		}
@@ -634,9 +393,9 @@ const char * PluginManager::CheckPluginCompatibility(const F4SEPluginVersionData
 		// check for 'known bad' versions of plugins
 		for(const MinVersionEntry * iter = kMinVersionList; iter->name; ++iter)
 		{
-			if(!strcmp(iter->name, version.name))
+			if(!strcmp(iter->name, plugin->info.name))
 			{
-				if(version.pluginVersion < iter->minVersion)
+				if(plugin->info.version < iter->minVersion)
 				{
 #ifdef RUNTIME
 					if(iter->compatFlags & kCompat_BlockFromRuntime)
@@ -656,61 +415,6 @@ const char * PluginManager::CheckPluginCompatibility(const F4SEPluginVersionData
 				break;
 			}
 		}
-
-		// version compatibility
-		const UInt32 kCurrentAddressLibrary = F4SEPluginVersionData::kAddressIndependence_AddressLibrary_1_10_980;
-
-		bool hasAddressIndependence = version.addressIndependence &
-			(F4SEPluginVersionData::kAddressIndependence_Signatures |
-			kCurrentAddressLibrary);
-		bool hasStructureIndependence = version.structureIndependence &
-			(F4SEPluginVersionData::kStructureIndependence_NoStructs |
-			F4SEPluginVersionData::kStructureIndependence_1_10_980Layout);
-		
-		bool versionIndependent = hasAddressIndependence && hasStructureIndependence;
-
-		// currently anything in the "breaking change" field means that compatibility has been broken by an update
-		if(version.reservedBreaking)
-			versionIndependent = false;
-
-		// verify the address library is there to centralize error message
-		if(version.addressIndependence & kCurrentAddressLibrary)
-		{
-			const char * result = CheckAddressLibrary();
-			if(result) return result;
-		}
-		
-		// simple version list
-		if(!versionIndependent)
-		{
-			bool found = false;
-
-			for(UInt32 i = 0; i < _countof(version.compatibleVersions); i++)
-			{
-				UInt32 compatibleVersion = version.compatibleVersions[i];
-
-				if(compatibleVersion == RUNTIME_VERSION)
-				{
-					found = true;
-					break;
-				}
-				else if(!compatibleVersion)
-				{
-					break;
-				}
-			}
-
-			if(!found)
-			{
-				return "disabled, incompatible with current version of the game";
-			}
-		}
-
-		// SE version compatibility
-		if(version.seVersionRequired > PACKED_F4SE_VERSION)
-		{
-			return "disabled, requires newer script extender";
-		}
 	}
 	__except(EXCEPTION_EXECUTE_HANDLER)
 	{
@@ -718,110 +422,7 @@ const char * PluginManager::CheckPluginCompatibility(const F4SEPluginVersionData
 		return "disabled, fatal error occurred while checking plugin compatibility";
 	}
 
-	return nullptr;
-}
-
-void PluginManager::LogPluginLoadError(const LoadedPlugin & pluginSrc, const char * errStr, UInt32 errCode, bool isError)
-{
-	LoadedPlugin plugin = pluginSrc;
-
-	plugin.errorState = errStr;
-	plugin.errorCode = errCode;
-
-	if(isError)
-		m_erroredPlugins.push_back(plugin);
-
-	_MESSAGE("plugin %s (%08X %s %08X) %s %d (handle %d)",
-		plugin.dllName.c_str(),
-		plugin.version.dataVersion,
-		plugin.version.name,
-		plugin.version.pluginVersion,
-		plugin.errorState,
-		plugin.errorCode,
-		s_currentPluginHandle);
-}
-
-struct BetterPluginName
-{
-	const char * dllName;
-	const char * userReportedName;
-};
-
-// some plugins have non-descriptive names resulting in bad bug reports
-static const BetterPluginName kBetterPluginNames[] =
-{
-	{ nullptr, nullptr }
-};
-
-void PluginManager::ReportPluginErrors()
-{
-	if(m_erroredPlugins.empty())
-		return;
-
-	if(m_oldAddressLibrary)
-		UpdateAddressLibraryPrompt();
-
-	// Fallout doesn't have a line that comes to mind here.
-
-	std::string message = "A mod you have installed contains a DLL plugin that has failed to load correctly. If a new version of Fallout was just released, the plugin needs to be updated. Please check the mod's webpage for updates. This is not a problem with F4SE.\n";
-
-	for(auto & plugin : m_erroredPlugins)
-	{
-		message += "\n";
-
-		bool foundReplacementName = false;
-		for(auto * iter = kBetterPluginNames; iter->dllName; ++iter)
-		{
-			if(!_stricmp(iter->dllName, plugin.dllName.c_str()))
-			{
-				foundReplacementName = true;
-
-				message += iter->userReportedName;
-				message += " (" + plugin.dllName + ")";
-			}
-		}
-		if(!foundReplacementName)
-			message += plugin.dllName;
-
-		message += ": ";
-		message += plugin.errorState;
-
-		if(plugin.errorCode)
-		{
-			char codeStr[128];
-			sprintf_s(codeStr, "%08X", plugin.errorCode);
-
-			message += " (";
-			message += codeStr;
-			message += ")";
-		}
-	}
-
-	message += "\n\nContinuing to load may result in lost save data or other undesired behavior.";
-	message += "\nExit game? (yes highly suggested)";
-
-	int result = MessageBox(0, message.c_str(), "F4SE Plugin Loader (" __PREPRO_TOKEN_STR__(F4SE_VERSION_INTEGER) "."
-		__PREPRO_TOKEN_STR__(F4SE_VERSION_INTEGER_MINOR) "."
-		__PREPRO_TOKEN_STR__(F4SE_VERSION_INTEGER_BETA) ")",
-		MB_YESNO);
-
-	if(result == IDYES)
-	{
-		TerminateProcess(GetCurrentProcess(), 0);
-	}
-}
-
-void PluginManager::UpdateAddressLibraryPrompt()
-{
-	int result = MessageBox(0,
-		"DLL plugins you have installed require a new version of the Address Library. Either this is a new install, or Fallout was just updated. Visit the Address Library webpage for updates?",
-		"F4SE Plugin Loader", MB_YESNO);
-
-	if(result == IDYES)
-	{
-		ShellExecute(0, nullptr, "https://www.nexusmods.com/fallout4/mods/47327", nullptr, nullptr, 0);
-		TerminateProcess(GetCurrentProcess(), 0);
-	}
+	return NULL;
 }
 
 // Plugin communication interface

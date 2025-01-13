@@ -1,6 +1,6 @@
 #include "ObScript.h"
 
-// 
-RelocPtr <ObScriptCommand>	g_firstObScriptCommand(0x02C791B0);
-// 
-RelocPtr <ObScriptCommand>	g_firstConsoleCommand(0x02C891A0);
+// 61A506FAB79EC111F852CE23E1E7A87D3E195A1B+43
+RelocPtr <ObScriptCommand>	g_firstObScriptCommand(0x0371C450);
+// 61A506FAB79EC111F852CE23E1E7A87D3E195A1B+1A
+RelocPtr <ObScriptCommand>	g_firstConsoleCommand(0x0372C440);

@@ -130,8 +130,8 @@ public:
 	};
 
 	MEMBER_FN_PREFIX(BSShaderProperty);
-	DEFINE_MEMBER_FN(SetMaterial, bool, 0x0200C480, BSShaderMaterial * material, bool unk1);
-	DEFINE_MEMBER_FN(SetFlag, void, 0x0200C2C0, UInt8 flags, bool enabled); // sets or unsets particular flags
+	DEFINE_MEMBER_FN(SetMaterial, bool, 0x0278EF20, BSShaderMaterial * material, bool unk1);
+	DEFINE_MEMBER_FN(SetFlag, void, 0x0278EDA0, UInt8 flags, bool enabled); // sets or unsets particular flags
 };
 STATIC_ASSERT(sizeof(BSShaderProperty) == 0x70);
 
@@ -145,7 +145,7 @@ public:
 	float							unk84;					// 84
 
 	MEMBER_FN_PREFIX(BSEffectShaderProperty);
-	DEFINE_MEMBER_FN(ctor, void, 0x0201A330);
+	DEFINE_MEMBER_FN(ctor, void, 0x0279E600);
 
 	static BSEffectShaderProperty * Create();
 };
@@ -173,9 +173,10 @@ public:
 	UInt32			unkE4;							// E4
 
 	MEMBER_FN_PREFIX(BSLightingShaderProperty);
-	DEFINE_MEMBER_FN(ctor, BSLightingShaderProperty *, 0x0201BF90);
-	DEFINE_MEMBER_FN(MakeValidForRendering, void, 0x0201C250, BSGeometry * geometry); // previously InvalidateShader
-	DEFINE_MEMBER_FN(LoadTextureSet, void, 0x0201C900, UInt32 unk1); // unk1 usually 0, called after material Releases textures (previously InvalidateTextures)
+	DEFINE_MEMBER_FN(ctor, BSLightingShaderProperty *, 0x027A23B0);
+	DEFINE_MEMBER_FN(MakeValidForRendering, void, 0x027A2630, BSGeometry * geometry); // previously InvalidateShader
+	DEFINE_MEMBER_FN(ApplyMaterial, bool, 0x00054DB0); // Calls BSShaderProperty::SetMaterial
+	DEFINE_MEMBER_FN(LoadTextureSet, void, 0x027A2CA0, UInt32 unk1); // unk1 usually 0, called after material Releases textures (previously InvalidateTextures)
 
 	static BSLightingShaderProperty * Create();
 };

@@ -25,23 +25,6 @@ namespace papyrusScriptObject
 		g_inputKeyEventRegs.Unregister(key, thisObject->GetHandle(), thisObject->GetObjectType());
 	}
 
-	void RegisterForGamepadButton(VMObject* thisObject, UInt32 key)
-	{
-		if (!thisObject)
-			return;
-
-		g_inputGamepadButtonEventRegs.Register(key, thisObject->GetHandle(), thisObject->GetObjectType());
-	}
-
-	void UnregisterForGamepadButton(VMObject* thisObject, UInt32 key)
-	{
-		if (!thisObject)
-			return;
-		g_inputGamepadButtonEventRegs.Unregister(key, thisObject->GetHandle(), thisObject->GetObjectType());
-	}
-
-
-
 	void RegisterForControl(VMObject * thisObject, BSFixedString control)
 	{
 		if(!thisObject)
@@ -108,7 +91,7 @@ namespace papyrusScriptObject
 			params = const_cast<FormParameters*>(&it->params);
 		}
 		
-		if(!var.IsNone())
+		if(var.IsNone())
 		{
 			// ObjectReference
 			TESObjectREFR* refr = nullptr;
@@ -277,13 +260,4 @@ void papyrusScriptObject::RegisterFuncs(VirtualMachine* vm)
 
 	vm->RegisterFunction(
 		new NativeFunction1 <VMObject, void, VMVariable>("UnregisterForFurnitureEvent", "ScriptObject", papyrusScriptObject::UnregisterForFurnitureEvent, vm));
-
-
-	vm->RegisterFunction(
-		new NativeFunction1 <VMObject, void, UInt32>("RegisterForGamepadButton", "ScriptObject", papyrusScriptObject::RegisterForGamepadButton, vm));
-
-	vm->RegisterFunction(
-		new NativeFunction1 <VMObject, void, UInt32>("UnregisterForGamepadButton", "ScriptObject", papyrusScriptObject::UnregisterForGamepadButton, vm));
-
-
 }

@@ -16,11 +16,11 @@
 #define LOG_INPUT_HOOK 0
 
 typedef void (* _CreateMenuControlHandlers)(MenuControls * mem);
-RelocAddr <_CreateMenuControlHandlers> CreateMenuControlHandlers(0x00FEDDA0);
+RelocAddr <_CreateMenuControlHandlers> CreateMenuControlHandlers(0x01323870);
 _CreateMenuControlHandlers CreateMenuControlHandlers_Original = nullptr;
 
 typedef void (* _CreatePlayerControlHandlers)(PlayerControls * mem);
-RelocAddr <_CreatePlayerControlHandlers> CreatePlayerControlHandlers(0x00D56C60);
+RelocAddr <_CreatePlayerControlHandlers> CreatePlayerControlHandlers(0x00FC2910);
 _CreatePlayerControlHandlers CreatePlayerControlHandlers_Original = nullptr;
 
 #if HOOK_RAW_INPUT
@@ -142,20 +142,6 @@ void HandleButtonEvent(ButtonEvent * inputEvent)
 			SendPapyrusEvent1<BSFixedString>(reg.handle, reg.scriptName, "OnControlDown", control);
 		}
 		);
-
-		if (deviceType == InputEvent::kDeviceType_Gamepad)
-		{
-			g_inputKeyEventRegs.ForEach(
-				keyMask,
-				[&keyMask](const EventRegistration<NullParameters>& reg)
-				{
-					SendPapyrusEvent1<UInt32>(reg.handle, reg.scriptName, "OnGamepadButtonDown", keyMask);
-				}
-			);
-		}
-
-
-
 	}
 	else if (isUp)
 	{
@@ -173,21 +159,6 @@ void HandleButtonEvent(ButtonEvent * inputEvent)
 			SendPapyrusEvent2<BSFixedString, float>(reg.handle, reg.scriptName, "OnControlUp", control, timer);
 		}
 		);
-
-		if (deviceType == InputEvent::kDeviceType_Gamepad)
-		{
-			g_inputGamepadButtonEventRegs.ForEach(
-				keyMask,
-				[&keyMask, &timer](const EventRegistration<NullParameters>& reg)
-				{
-					SendPapyrusEvent2<UInt32, float>(reg.handle, reg.scriptName, "OnGamepadButtonUp", keyMask, timer);
-				}
-			);
-
-		}
-
-
-
 	}
 }
 
@@ -230,7 +201,8 @@ F4SEInputMenuHandler g_inputMenuHandler;
 void CreatePlayerControlHandlers_Hook(PlayerControls * playerControls)
 {
 	// Process F4SE handlers first so no events will be blocked
-	playerControls->inputEvents1.Push(&g_inputHandler);
+	// ### not working in VR build, need to check offsets
+//	playerControls->inputEvents1.Push(&g_inputHandler);
 
 	CreatePlayerControlHandlers_Original(playerControls);
 }
@@ -238,7 +210,7 @@ void CreatePlayerControlHandlers_Hook(PlayerControls * playerControls)
 void CreateMenuControlHandlers_Hook(MenuControls * menuControls)
 {
 	CreateMenuControlHandlers_Original(menuControls);
-	menuControls->inputEvents.Push(&g_inputMenuHandler);
+//	menuControls->inputEvents.Push(&g_inputMenuHandler);
 }
 
 void Hooks_Input_Init()
@@ -290,7 +262,7 @@ void Hooks_Input_Commit()
 			{
 				Xbyak::Label retnLabel;
 
-				mov(ptr[rsp+0x10], rbx);
+				mov(ptr[rsp+0x08], rbx);
 
 				jmp(ptr [rip + retnLabel]);
 

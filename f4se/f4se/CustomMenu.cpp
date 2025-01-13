@@ -12,7 +12,7 @@ CustomMenu::CustomMenu() : GameMenuBase()
 // Normally this code would happen in the constructor, but the menu name isn't set until after construction
 void LoadCustomMenu_Hook(IMenu * menu)
 {
-	BSWriteLocker locker(&g_customMenuLock);
+	BSReadAndWriteLocker locker(&g_customMenuLock);
 	auto menuData = g_customMenuData.find(menu->menuName.c_str());
 	if(menuData != g_customMenuData.end())
 	{
@@ -23,10 +23,10 @@ void LoadCustomMenu_Hook(IMenu * menu)
 		menu->flags = menuData->second.menuFlags;
 		menu->depth = menuData->second.depth;
 
-		if((menu->flags & IMenu::kFlag_UsesCursor) && (extFlags & CustomMenuData::kExtFlag_CheckForGamepad))
+		if((menu->flags & IMenu::kFlag_ShowCursor) && (extFlags & CustomMenuData::kExtFlag_CheckForGamepad))
 		{
 			if((*g_inputDeviceMgr)->IsGamepadEnabled())
-				menu->flags &= ~IMenu::kFlag_UsesCursor;
+				menu->flags &= ~IMenu::kFlag_ShowCursor;
 		}
 
 		if (CALL_MEMBER_FN((*g_scaleformManager), LoadMovie)(menu, menu->movie, menuPath.c_str(), rootPath.c_str(), movieFlags))
@@ -37,17 +37,17 @@ void LoadCustomMenu_Hook(IMenu * menu)
 
 			GameMenuBase * gameMenu = static_cast<GameMenuBase*>(menu);
 
-			CreateBaseShaderTarget(gameMenu->filterHolder, menu->stage);
+			CreateBaseShaderTarget(gameMenu->shaderTarget, menu->stage);
 
 			if(extFlags & CustomMenuData::kExtFlag_InheritColors)
 			{
-				gameMenu->filterHolder->SetFilterColor(false);
-				(*g_colorUpdateDispatcher)->eventDispatcher.AddEventSink(gameMenu->filterHolder);
+				gameMenu->shaderTarget->SetFilterColor(false);
+				(*g_colorUpdateDispatcher)->eventDispatcher.AddEventSink(gameMenu->shaderTarget);
 			}
 
-			if (menu->flags & IMenu::kFlag_CustomRendering)
+			if (menu->flags & IMenu::kFlag_ApplyDropDownFilter)
 			{
-				gameMenu->shaderFXObjects.Push(gameMenu->filterHolder);
+				gameMenu->subcomponents.Push(gameMenu->shaderTarget);
 			}
 		}
 	}

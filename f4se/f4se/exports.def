@@ -1,2 +1,6 @@
 EXPORTS
-StartF4SE @1
+StartF4SE
+GetLoadedLightModIndex
+GetLoadedModIndex
+LookupLoadedLightModByName
+LookupLoadedModByName

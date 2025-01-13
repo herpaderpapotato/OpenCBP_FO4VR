@@ -57,7 +57,7 @@ UInt32 GetFormIDFromString(std::string const& configString)
     {
         if (!std::isxdigit(digit))
         {
-            logger.Error("Invalid FormID %s, invalid hex character %c\n", pluginFormID.c_str(), digit);
+            //logger.Error("Invalid FormID %s, invalid hex character %c\n", pluginFormID.c_str(), digit);
             return -1;
         }
     }
@@ -71,16 +71,17 @@ UInt32 GetFormIDFromString(std::string const& configString)
 
         if (!modInfo)
         {
-            logger.Error("Plugin with name %s does not exist\n", pluginName.c_str());
+            //logger.Error("Plugin with name %s does not exist\n", pluginName.c_str());
             return -1;
         }
 
-        bool isLightPlugin = modInfo->recordFlags & modInfo->kRecordFlags_ESL;
+        //bool isLightPlugin = modInfo->recordFlags & modInfo->kRecordFlags_ESL;
+        bool isLightPlugin = false;
         size_t maxPartialIdLength = isLightPlugin ? 3 : 6;
 
         if (pluginFormID.length() > maxPartialIdLength)
         {
-            logger.Error("Invalid FormID %s, too many characters when%s plugin name specified\n", pluginFormID.c_str(), isLightPlugin ? " light" : "");
+            //logger.Error("Invalid FormID %s, too many characters when%s plugin name specified\n", pluginFormID.c_str(), isLightPlugin ? " light" : "");
             return -1;
         }
 
@@ -91,7 +92,7 @@ UInt32 GetFormIDFromString(std::string const& configString)
     {
         if (pluginFormID.length() > 8)
         {
-            logger.Error("Invalid FormID %s, too many characters\n", pluginFormID.c_str());
+            //logger.Error("Invalid FormID %s, too many characters\n", pluginFormID.c_str());
             return -1;
         }
     }
@@ -99,9 +100,21 @@ UInt32 GetFormIDFromString(std::string const& configString)
     return formID;
 }
 
+auto compareStrings(const std::string& str1, const std::string& str2) {
+    auto it1 = str1.begin();
+    auto it2 = str2.begin();
+    while (it1 != str1.end() && it2 != str2.end() && *it1 == *it2) {
+        it1++;
+        it2++;
+    }
+    return std::pair(it1, it2);
+}
+
+
+
 bool LoadConfig()
 {
-    logger.Info("loadConfig\n");
+    //logger.Info("loadConfig\n");
 
     config_t configOverrides;
     std::map<UInt32, config_t> configArmorBoneOverrides;
@@ -124,9 +137,9 @@ bool LoadConfig()
     INIReader configReader("Data\\F4SE\\Plugins\\ocbp.ini");
     if (configReader.ParseError() < 0)
     {
-        logger.Error("Can't load 'ocbp.ini'\n");
+        //logger.Error("Can't load 'ocbp.ini'\n");
     }
-    logger.Error("Reading CBP Config\n");
+    //logger.Error("Reading CBP Config\n");
 
     // Read general settings
     playerOnly = configReader.GetBoolean("General", "playerOnly", false);
@@ -191,19 +204,24 @@ bool LoadConfig()
 
         // Split for override section check
         auto overrideStr = std::string("Override:");
-        auto splitOverrideStr = std::mismatch(overrideStr.begin(), overrideStr.end(), sectionsIter->begin());
+        //auto splitOverrideStr = std::mismatch(overrideStr.begin(), overrideStr.end(), sectionsIter->begin());
+		auto splitOverrideStr = compareStrings(overrideStr, *sectionsIter);
 
         auto subOverrideStr = std::string("Override.");
-        auto splitSubOverrideStr = std::mismatch(subOverrideStr.begin(), subOverrideStr.end(), sectionsIter->begin());
+        //auto splitSubOverrideStr = std::mismatch(subOverrideStr.begin(), subOverrideStr.end(), sectionsIter->begin());
+		auto splitSubOverrideStr = compareStrings(subOverrideStr, *sectionsIter);
 
         auto subAttachStr = std::string("Attach.");
-        auto splitSubAttachStr = std::mismatch(subAttachStr.begin(), subAttachStr.end(), sectionsIter->begin());
+        //auto splitSubAttachStr = std::mismatch(subAttachStr.begin(), subAttachStr.end(), sectionsIter->begin());
+		auto splitSubAttachStr = compareStrings(subAttachStr, *sectionsIter);
 
         auto armorStr = std::string("Armor.");
-        auto splitArmorStr = std::mismatch(armorStr.begin(), armorStr.end(), sectionsIter->begin());
+        //auto splitArmorStr = std::mismatch(armorStr.begin(), armorStr.end(), sectionsIter->begin());
+		auto splitArmorStr = compareStrings(armorStr, *sectionsIter);
 
         auto actorStr = std::string("Actor.");
-        auto splitActorStr = std::mismatch(actorStr.begin(), actorStr.end(), sectionsIter->begin());
+        //auto splitActorStr = std::mismatch(actorStr.begin(), actorStr.end(), sectionsIter->begin());
+		auto splitActorStr = compareStrings(actorStr, *sectionsIter);
 
         if (*sectionsIter == std::string("Attach"))
         {
@@ -562,7 +580,7 @@ bool LoadConfig()
     DumpUsedSlotsToLog();
     DumpConfigToLog();
 
-    logger.Error("Finished CBP Config\n");
+    //logger.Error("Finished CBP Config\n");
     return reloadActors;
 }
 
@@ -572,54 +590,54 @@ void DumpConfigToLog()
     //logger.Info("***** Config Dump *****\n");
     //for (auto & section : config)
     //{
-    //    logger.Info("[%s]\n", section.first.c_str());
+    //    //logger.Info("[%s]\n", section.first.c_str());
     //    for (auto & setting : section.second)
     //    {
-    //        logger.Info("%s=%f\n", setting.first.c_str(), setting.second);
+    //        //logger.Info("%s=%f\n", setting.first.c_str(), setting.second);
     //    }
     //}
 
-    logger.Info("***** ConfigArmorOverride Dump *****\n");
+    //logger.Info("***** ConfigArmorOverride Dump *****\n");
     for (auto & conf : configArmorOverrideMap)
     {
-        logger.Info("** Slot-Armor Map priority %d **\n", conf.first);
-        logger.Info("[Slots]\n");
+        //logger.Info("** Slot-Armor Map priority %d **\n", conf.first);
+        //logger.Info("[Slots]\n");
         for (auto slot : conf.second.slots)
         {
-            logger.Info("%ul\n", slot);
+            //logger.Info("%ul\n", slot);
         }
-        logger.Info("[Armors]\n");
+        //logger.Info("[Armors]\n");
         for (auto formID : conf.second.armors)
         {
-            logger.Info("%ul\n", formID);
+            //logger.Info("%ul\n", formID);
         }
-        logger.Info("** Config priority %d **\n", conf.first);
+        //logger.Info("** Config priority %d **\n", conf.first);
         for (auto & section : conf.second.config)
         {
-            logger.Info("[%s]\n", section.first.c_str());
+            //logger.Info("[%s]\n", section.first.c_str());
             for (auto & setting : section.second)
             {
-                logger.Info("%s=%f\n", setting.first.c_str(), setting.second);
+                //logger.Info("%s=%f\n", setting.first.c_str(), setting.second);
             }
         }
     }
 
-    logger.Info("***** ConfigActorOverride Dump *****\n");
+    //logger.Info("***** ConfigActorOverride Dump *****\n");
     for (auto & conf : configActorOverrideMap)
     {
-        logger.Info("** Slot-Actor Map priority %d **\n", conf.first);
-        logger.Info("[Actor]\n");
+        //logger.Info("** Slot-Actor Map priority %d **\n", conf.first);
+        //logger.Info("[Actor]\n");
         for (auto & formID : conf.second.actors)
         {
-            logger.Info("%d\n", formID);
+            //logger.Info("%d\n", formID);
         }
-        logger.Info("** Config priority %d **\n", conf.first);
+        //logger.Info("** Config priority %d **\n", conf.first);
         for (auto & section : conf.second.config)
         {
-            logger.Info("[%s]\n", section.first.c_str());
+            //logger.Info("[%s]\n", section.first.c_str());
             for (auto & setting : section.second)
             {
-                logger.Info("%s=%f\n", setting.first.c_str(), setting.second);
+                //logger.Info("%s=%f\n", setting.first.c_str(), setting.second);
             }
         }
     }
@@ -627,22 +645,22 @@ void DumpConfigToLog()
 
 void DumpWhitelistToLog()
 {
-    logger.Info("***** Whitelist Dump *****\n");
+    //logger.Info("***** Whitelist Dump *****\n");
     for (auto & section : whitelist)
     {
-        logger.Info("[%s]\n", section.first.c_str());
+        //logger.Info("[%s]\n", section.first.c_str());
         for (auto & setting : section.second)
         {
-            logger.Info("%s= female: %d, male: %d\n", setting.first.c_str(), setting.second.female, setting.second.male);
+            //logger.Info("%s= female: %d, male: %d\n", setting.first.c_str(), setting.second.female, setting.second.male);
         }
     }
 }
 
 void DumpUsedSlotsToLog()
 {
-    logger.Info("***** UsedSlots Dump *****\n");
+    //logger.Info("***** UsedSlots Dump *****\n");
     for (auto& v : usedSlots)
     {
-        logger.Info("used slot : %d\n", v);
+        //logger.Info("used slot : %d\n", v);
     }
 }

@@ -20,7 +20,6 @@ class SpellItem;
 class TESObjectMISC;
 class BGSDamageType;
 class VirtualMachine;
-class BGSCollisionLayer;
 
 typedef TESObjectREFR* (* _PlaceAtMe_Native)(VirtualMachine* vm, UInt32 stackId, TESObjectREFR** target, TESForm* form, SInt32 count, bool bForcePersist, bool bInitiallyDisabled, bool bDeleteWhenAble);
 extern RelocAddr<_PlaceAtMe_Native> PlaceAtMe_Native;
@@ -228,14 +227,14 @@ public:
 	tArray<BGSCharacterTint::Entry*>	* tints;			// 300 - CF 0x800
 
 	MEMBER_FN_PREFIX(TESNPC);
-	DEFINE_MEMBER_FN(ctor, TESNPC*, 0x005FAA30);
-	DEFINE_MEMBER_FN(HasOverlays, bool, 0x0060B110);
-	DEFINE_MEMBER_FN(GetOverlayHeadParts, BGSHeadPart**, 0x0060B220);
-	DEFINE_MEMBER_FN(GetNumOverlayHeadParts, int, 0x0060B2D0);
-	DEFINE_MEMBER_FN(GetSex, SInt64, 0x005F0BC0); // npc->actorData.unk08 & 1
-	DEFINE_MEMBER_FN(ChangeHeadPartRemovePart, void, 0x006018D0, BGSHeadPart *, bool bRemoveExtraParts);
-	DEFINE_MEMBER_FN(ChangeHeadPart, void, 0x00605CE0, BGSHeadPart *);
-	DEFINE_MEMBER_FN(GetSkinColorFromTint, void, 0x00601C40, NiColorA * outColor, BGSCharacterTint::PaletteEntry* paletteEntry, bool allowCustomization); // This function alters the npc's Skin Color values
+	DEFINE_MEMBER_FN(ctor, TESNPC*, 0x005992E0);
+	DEFINE_MEMBER_FN(HasOverlays, bool, 0x005AABB0);
+	DEFINE_MEMBER_FN(GetOverlayHeadParts, BGSHeadPart**, 0x005AACD0);
+	DEFINE_MEMBER_FN(GetNumOverlayHeadParts, int, 0x005AAD80);
+	DEFINE_MEMBER_FN(GetSex, SInt64, 0x0058D040); // npc->actorData.unk08 & 1
+	DEFINE_MEMBER_FN(ChangeHeadPartRemovePart, void, 0x005A0040, BGSHeadPart *, bool bRemoveExtraParts);
+	DEFINE_MEMBER_FN(ChangeHeadPart, void, 0x005A45D0, BGSHeadPart *);
+	DEFINE_MEMBER_FN(GetSkinColorFromTint, void, 0x005A03A0, NiColorA * outColor, BGSCharacterTint::PaletteEntry* paletteEntry, bool allowCustomization); // This function alters the npc's Skin Color values
 
 	void ChangeHeadPart(BGSHeadPart * headPart, bool bRemovePart, bool bRemoveExtraParts);
 	BGSHeadPart * GetHeadPartByType(UInt32 type, bool bOverlays = false);
@@ -265,23 +264,7 @@ public:
 	BGSKeywordForm				keywordForm;		// 130
 	TESWeightForm				weight;				// 150
 
-	struct AMMO_DATA
-	{
-	public:
-		// members
-		BGSProjectile* projectile;	// 00
-		UInt32 health;				// 08
-		UInt8 flags;				// 0C
-		UInt8 unk0D;				// 0D
-		UInt8 unk0E;				// 0E
-		UInt8 unk0F;				// 0F
-		float damage;				// 10
-	};
-	STATIC_ASSERT(sizeof(AMMO_DATA) == 0x18);
-
-	AMMO_DATA data;                // 160
-	UInt64 shortDesc;  // 178
-	TESModel shellCasing;          // 180
+	UInt64		unk160[(0x1B0 - 0x160)/8];			// 160
 };
 
 // 300
@@ -795,40 +778,8 @@ public:
 	BGSPreloadable				preloadable;		// A8
 	BGSDestructibleObjectForm	destructible;		// B0
 
-	struct BGSProjectileData
-	{
-		UInt32					flags;					// 00
-		float					gravity;				// 04
-		float					speed;					// 08
-		float					range;					// 0C
-		TESObjectLIGH*			light;					// 10
-		TESObjectLIGH*			muzzleFlashLight;		// 18
-		float					explosionProximity;		// 20
-		float					explosionTimer;			// 24
-		BGSExplosion*			explosionType;			// 28
-		BGSSoundDescriptorForm*	activeSoundLoop;		// 30
-		float					muzzleFlashDuration;	// 38
-		float					fadeOutTime;			// 3C
-		float					force;					// 40
-		BGSSoundDescriptorForm*	countdownSound;			// 48
-		BGSSoundDescriptorForm*	deactivateSound;		// 50
-		TESObjectWEAP*			defaultWeaponSource;	// 58
-		float					coneSpread;				// 60
-		float					collisionRadius;		// 64
-		float					lifetime;				// 68
-		float					relaunchInterval;		// 6C
-		BGSTextureSet*			decalData;				// 70
-		BGSCollisionLayer*		collisionLayer;			// 78
-		BGSProjectile*			VATSProjectile;			// 80
-		SInt8					tracerFrequency;		// 88
-	};
-
-	BGSProjectileData			projectileData;			// C0
-	TESModel					muzzleFlashModel;		// 150
-	UInt32						soundLevel;				// 180
+	UInt64 unkC0[(0x188 - 0xC0) >> 3];
 };
-STATIC_ASSERT(sizeof(BGSProjectile) == 0x188);
-STATIC_ASSERT(sizeof(BGSProjectile::BGSProjectileData) == 0x90);
 
 // D8
 class TESLevCharacter : public TESBoundAnimObject

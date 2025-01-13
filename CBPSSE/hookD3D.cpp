@@ -2,10 +2,12 @@
 //#include <D3DCommon.h>
 //#include <dxgi.h>
 //#include <d3d11.h>
+#include <f4se/GameAPI.h>
+#include <f4se/PluginAPI.h>
+#include "f4se/GameThreads.h"
 
 #include "log.h"
 #include "../detourxs-master/detourxs.h"
-#include "f4se_common/f4se_version.h"
 #include "f4se_common/Utilities.h"
 
 //#define SAFE_RELEASE(x) if((x)) {x->Release(); x = nullptr;}
@@ -52,7 +54,7 @@
 //	foo++;
 //	if (foo > 60 * 5) {
 //		foo = 0;
-//		logger.error("hookClearState\n");
+//		//logger.Error("hookClearState\n");
 //	}
 //
 //	//scaleTest();
@@ -110,15 +112,15 @@
 //	_Out_opt_       D3D_FEATURE_LEVEL    *pFeatureLevel,
 //	_Out_opt_       ID3D11DeviceContext  **ppImmediateContext
 //) {
-//	logger.error("Create Device and SwapChain called\n");
+//	//logger.Error("Create Device and SwapChain called\n");
 //	HRESULT res = oCreateHook(pAdapter, DriverType, Software, Flags, pFeatureLevels, FeatureLevels
 //			, SDKVersion, pSwapChainDesc, ppSwapChain, ppDevice, pFeatureLevel, ppImmediateContext);
 //
-//	logger.error("Hooking ClearState\n");
+//	//logger.Error("Hooking ClearState\n");
 //	contextVTable = (DWORD_PTR*)*ppImmediateContext;
 //	contextVTable = (DWORD_PTR*)contextVTable[0];
 //	Hook(contextVTable, 110, (DWORD_PTR)hookClearState, (UINT_PTR *)&oClearStateHook);
-//	logger.error("ClearState Hooked\n");
+//	//logger.Error("ClearState Hooked\n");
 //	return res;
 //}
 //
@@ -130,10 +132,10 @@
 //	HWND hWnd = GetForegroundWindow();
 //	if (hWnd == nullptr)
 //		return false;
-//	logger.error("hook CreateDevice\n");
+//	//logger.Error("hook CreateDevice\n");
 //	clearHookDetour.Create((LPVOID)D3D11CreateDeviceAndSwapChain, D3D11CreateDeviceAndSwapChain2, &(LPVOID)oCreateHook);
 //	//oCreateHook = (D3D11CreateDeviceAndSwapChainHook)clearHookDetour.GetTrampoline();
-//	logger.error("Hook Complete\n");
+//	//logger.Error("Hook Complete\n");
 //
 //	return 0;
 //}
@@ -180,27 +182,25 @@ renderDetour.Create(ProcessTasks_HookTarget_Enter.GetPtr(), Render, &(LPVOID)ore
 
 */
 
-
-typedef void(*_ProcessEventQueue_Internal) (void * thisPtr);
+typedef void(*_ProcessEventQueue_Internal) (void* thisPtr);
 
 _ProcessEventQueue_Internal orig_ProcessEventQueue_Internal = nullptr;
 
 void UpdateActors();
 
-void hk_ProcessEventQueue_Internal(void *thisPtr)
+void hk_ProcessEventQueue_Internal(void* thisPtr)
 {
 	orig_ProcessEventQueue_Internal(thisPtr);
 	UpdateActors();
 }
 
-// See f4se/Hooks_Threads.cpp
-// TODO someday address library.  someday.
-RelocPtr <void*> ProcessEventQueue_Internal(0x01A09CB0);
+// RelocPtr <void*> ProcessEventQueue_Internal(0x0211CF80);			//Flat FO4
+RelocPtr <void*> ProcessEventQueue_Internal(0x0219DC00);			// FO4VR
 
 DetourXS renderDetour;
 
 void DoHook() {
-	logger.Info("Attempting Game Hook\n");
+	//logger.Info("Attempting Game Hook\n");
 
 	renderDetour.Create((LPVOID)ProcessEventQueue_Internal.GetPtr(), hk_ProcessEventQueue_Internal, (LPVOID*)(&orig_ProcessEventQueue_Internal));
 }
